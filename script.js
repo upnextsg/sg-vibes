@@ -40,27 +40,34 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // --- GPS: UPDATED FOR INSTAGRAM STABILITY ---
 async function getLocation() {
-    // If we already have a location, return it. Prevents non-stop popups.
-    if (state.userLoc) return state.userLoc;
+    if (state.userLoc && state.userLoc.lat !== SG_CENTER.lat) return state.userLoc;
     
-    return new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                resolve(state.userLoc);
-            },
-            (err) => {
-                console.warn("Location skipped, using SG Center:", err.message);
-                state.userLoc = SG_CENTER; 
-                resolve(SG_CENTER); 
-            }, 
-            { 
-                enableHighAccuracy: false, // Instant response in Instagram/WebViews
-                timeout: 10000,            // 10s window for user to click "Allow"
-                maximumAge: 60000          // Use cached location if available
-            } 
-        );
-    });
+    const getCoords = (highAcc) => {
+        return new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: highAcc,
+                timeout: 5000, 
+                maximumAge: 0
+            });
+        });
+    };
+
+    try {
+        // Attempt 1: Standard (Fast)
+        const pos = await getCoords(false);
+        state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    } catch (err) {
+        console.warn("First GPS attempt failed, retrying once...");
+        try {
+            // Attempt 2: Instagram often needs a second "poke" to wake up
+            const pos = await getCoords(false);
+            state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        } catch (finalErr) {
+            console.error("GPS totally failed. Using Orchard Road.");
+            state.userLoc = SG_CENTER;
+        }
+    }
+    return state.userLoc;
 }
 
 // --- ENGINE: CORE LOGIC ---
