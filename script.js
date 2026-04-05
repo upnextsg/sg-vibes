@@ -36,20 +36,24 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 // --- GPS: LOCATION WITH GRACEFUL FALLBACK ---
+const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
+
 async function getLocation() {
     if (state.userLoc) return state.userLoc;
     
     return new Promise((resolve) => {
+        // High accuracy can cause timeouts in Instagram; using a timeout to force fallback
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 resolve(state.userLoc);
             },
             (err) => {
-                console.warn("Location skipped:", err.message);
-                resolve(null); // Continue without distance sorting if denied/fails
+                console.warn("Location blocked/failed. Using fallback.");
+                state.userLoc = SG_CENTER; // Set fallback so distance calculation still works
+                resolve(SG_CENTER);
             }, 
-            { enableHighAccuracy: true, maximumAge: 0 } 
+            { enableHighAccuracy: false, timeout: 5000, maximumAge: Infinity } 
         );
     });
 }
@@ -59,10 +63,11 @@ async function handleAction(category) {
     const resultsDiv = document.getElementById("results");
     const alertDiv = document.getElementById("distance-alert");
     
-    // UI Update: Active Buttons & Skeletons
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
-    alertDiv.classList.add('hidden');
+    
+    // Ensure we have location BEFORE proceeding, but only fetch if we don't have it
+    const userCoords = state.userLoc || await getLocation();
     
     // Only show skeletons if we are fetching new data
     if (state.currentCategory !== category) {
