@@ -35,52 +35,79 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// --- GPS: LOCATION WITH GRACEFUL FALLBACK ---
+
+// Add isLocating to your state object at the top of your file
+let state = { 
+    userLoc: null, 
+    currentCategory: null, 
+    dataCache: [],
+    pointers: { food: 0, store: 0, music: 0 },
+    isLocating: false // NEW: Prevents app from moving forward until GPS is resolved
+};
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
+// --- GPS: THE ONCE-AND-FOR-ALL FIX ---
 async function getLocation() {
     if (state.userLoc) return state.userLoc;
     
     return new Promise((resolve) => {
-        // High accuracy can cause timeouts in Instagram; using a timeout to force fallback
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 resolve(state.userLoc);
             },
             (err) => {
-                console.warn("Location blocked/failed. Using fallback.");
-                state.userLoc = SG_CENTER; // Set fallback so distance calculation still works
+                // If the user hits DENY, or if it genuinely times out, we use the fallback ONCE.
+                console.warn("Location denied/failed:", err.message);
+                state.userLoc = SG_CENTER; 
                 resolve(SG_CENTER);
             }, 
-            { enableHighAccuracy: false, timeout: 5000, maximumAge: Infinity } 
+            { 
+                enableHighAccuracy: false, // Ensures fast response in WebViews
+                timeout: 30000,            // Give the user 30 full seconds to deal with the popup
+                maximumAge: Infinity 
+            } 
         );
     });
 }
 
 // --- ENGINE: CORE LOGIC ---
 async function handleAction(category) {
+    // 1. Prevent overlapping clicks while waiting for the permission popup
+    if (state.isLocating) return; 
+
     const resultsDiv = document.getElementById("results");
     const alertDiv = document.getElementById("distance-alert");
+    const clickedBtn = document.getElementById(`${category}Btn`);
     
+    // UI Update: Active Buttons
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`${category}Btn`)?.classList.add('active');
-    
-    // Ensure we have location BEFORE proceeding, but only fetch if we don't have it
-    const userCoords = state.userLoc || await getLocation();
-    
-    // Only show skeletons if we are fetching new data
-    if (state.currentCategory !== category) {
-        resultsDiv.innerHTML = document.getElementById('skeleton-template').innerHTML.repeat(2);
+    clickedBtn.classList.add('active');
+    alertDiv.classList.add('hidden');
+
+    // 2. Apply the "Loading Lock" visually if we don't have location yet
+    let originalText = clickedBtn.innerHTML;
+    if (!state.userLoc) {
+        state.isLocating = true;
+        clickedBtn.innerHTML = `<span class="icon">⏳</span> Waiting...`;
+        resultsDiv.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: white; padding: 40px;">📍 Please click "Allow" on the location prompt...</div>`;
     }
 
     try {
-        // 1. Await location first to ensure correct sorting on load
+        // 3. The app patiently waits here until the user clicks Allow/Deny.
         const userCoords = await getLocation();
 
-        // 2. Fetch data if category changed
+        // Unlock the UI once we have an answer
+        if (state.isLocating) {
+            clickedBtn.innerHTML = originalText;
+            state.isLocating = false;
+        }
+
+        // 4. Fetch data if category changed
         if (state.currentCategory !== category) {
+            resultsDiv.innerHTML = document.getElementById('skeleton-template').innerHTML.repeat(2);
             state.currentCategory = category;
+            
             const res = await fetch(CONFIG.sheets[category]);
             if (!res.ok) throw new Error("Fetch failed");
             const text = await res.text();
@@ -89,16 +116,13 @@ async function handleAction(category) {
                 .slice(1) 
                 .map(row => row.trim())
                 .filter(row => row.length > 10) 
-                .map((row, idx) => ({
-                    id: idx,
-                    cols: secureParseCSV(row)
-                }))
+                .map((row, idx) => ({ id: idx, cols: secureParseCSV(row) }))
                 .filter(item => item.cols.length >= 5);
             
             state.pointers[category] = 0; 
         }
 
-        // 3. Calculate distances and sort (runs every time to ensure accuracy)
+        // 5. Calculate distances securely
         if (userCoords && category !== 'music') {
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
@@ -107,16 +131,13 @@ async function handleAction(category) {
                     ? calculateDistance(userCoords.lat, userCoords.lng, lat, lng) : 9999;
             });
 
-            // Only fully sort if we are at the start of the list
             if (state.pointers[category] === 0) {
                 state.dataCache.sort((a, b) => a.dist - b.dist);
             }
         }
 
-        // 4. Pointer System (Pagination)
+        // 6. Rendering Logic
         let currentIndex = state.pointers[category];
-
-        // Check if we hit the end of the list
         if (currentIndex >= state.dataCache.length) {
             resultsDiv.innerHTML = `
                 <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
@@ -129,31 +150,31 @@ async function handleAction(category) {
         let selection = state.dataCache.slice(currentIndex, currentIndex + 2);
         state.pointers[category] += 2;
 
-        // 5. Boundary Alerts (2km Check)
+        // Boundary Alerts
         if (userCoords && category !== 'music') {
             const hasAnyNear = state.dataCache.some(item => item.dist <= 2);
             const currentItemsAreFar = selection.every(item => item.dist > 2);
 
             if (!hasAnyNear) {
-                alertDiv.textContent = "📍 No available options within 2km, showing further options";
+                alertDiv.textContent = "📍 No options within 2km, showing others";
                 alertDiv.classList.remove('hidden');
             } else if (currentItemsAreFar) {
-                alertDiv.textContent = "📍 Options within 2km run out, showing further options";
+                alertDiv.textContent = "📍 Nearby options cleared, showing further ones";
                 alertDiv.classList.remove('hidden');
             }
         }
 
-        // 6. Render the Cards
+        // Draw Cards
         resultsDiv.innerHTML = "";
         selection.forEach(item => {
-            if (item) {
-                resultsDiv.appendChild(renderCard(item, category));
-            }
+            if (item) resultsDiv.appendChild(renderCard(item, category));
         });
 
     } catch (err) {
         console.error(err);
-        resultsDiv.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: white; padding: 20px;">❌ Error loading local vibes. Check your connection.</div>`;
+        state.isLocating = false;
+        clickedBtn.innerHTML = originalText;
+        resultsDiv.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: white; padding: 20px;">❌ Error loading data. Please try again.</div>`;
     }
 }
 
@@ -233,12 +254,15 @@ function resetList(cat) {
 // --- INIT: AUTO-START ON LOAD ---
 window.addEventListener('DOMContentLoaded', () => {
     const resultsDiv = document.getElementById("results");
-    // Initial loading state while waiting for GPS permission
+    
+    // Do NOT call handleAction('food') here automatically anymore.
+    // Instead, prompt the user to make the first move.
     resultsDiv.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 60px 20px;">
-            <p style="font-size: 1.2rem; margin-bottom: 10px;">📍 Finding nearby spots...</p>
-            <p style="font-size: 0.9rem; opacity: 0.7;">Please allow location access if prompted.</p>
+            <p style="font-size: 1.2rem; margin-bottom: 10px;">👋 Welcome!</p>
+            <p style="font-size: 0.9rem; opacity: 0.8;">Tap a category above to find spots near you.</p>
         </div>`;
+});
     
     // Automatically fetch and load the food category
     handleAction('food');
