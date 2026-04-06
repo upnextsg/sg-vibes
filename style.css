@@ -127,24 +127,26 @@ footer p { font-size: 0.85rem; opacity: 0.5; margin-bottom: 12px; }
 }
 /* --- Tutorial Overlay --- */
 #tutorial-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(10, 15, 30, 0.9); /* Matches your dark theme */
-    z-index: 9999; display: flex; flex-direction: column; 
-    align-items: center; justify-content: center;
-    color: white; text-align: center; backdrop-filter: blur(8px);
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(10, 15, 30, 0.95);
+    z-index: 10000; /* Higher than everything */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* For Safari/iOS */
 }
 
-#tutorial-overlay.hidden { display: none; }
-.tutorial-content { max-width: 85%; padding: 20px; }
-.tutorial-content h2 { margin-bottom: 10px; color: var(--accent); }
-.tutorial-content p { font-size: 1.05rem; line-height: 1.5; opacity: 0.9; }
-.tutorial-arrow { font-size: 3rem; color: white; margin: 15px 0; animation: bounce 1s infinite alternate; }
-.arrow-1 { transform: rotate(15deg); }
-.arrow-2 { transform: rotate(-15deg); }
-.tutorial-close {
-    margin-top: 30px; padding: 14px 30px; font-size: 1rem; font-weight: bold;
-    color: var(--bg-dark); background: white; border: none; border-radius: 20px;
-    cursor: pointer; box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+#tutorial-overlay.hidden { display: none !important; }
+
+.tutorial-content {
+    width: 90%;
+    max-width: 400px;
+    padding: 30px;
+    text-align: center;
+    color: white;
 }
 @keyframes bounce { 
     from { transform: translateY(0); } 
