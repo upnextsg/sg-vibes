@@ -136,7 +136,6 @@ async function handleAction(category, shouldScroll = true) {
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
 
-    // Instagram warning (non-blocking)
     if (isInstagramBrowser()) {
         const alertBox = document.getElementById("distance-alert");
         if (alertBox) {
@@ -202,7 +201,6 @@ async function handleAction(category, shouldScroll = true) {
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
-            }
         }
 
     } catch (e) {
@@ -210,7 +208,6 @@ async function handleAction(category, shouldScroll = true) {
     } finally {
         state.isLocating = false;
     }
-}
 }
 
 // -----------------------------
