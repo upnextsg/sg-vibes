@@ -17,6 +17,9 @@ let state = {
 
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
+// -----------------------------
+// HELPERS
+// -----------------------------
 function isInstagramBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     return /Instagram/i.test(ua);
@@ -44,45 +47,80 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
+// -----------------------------
+// GEOLOCATION ENGINE
+// -----------------------------
 async function getLocation() {
     if (state.locationStatus === 'resolved' || state.locationStatus === 'requesting') {
         return state.userLoc || SG_CENTER;
     }
+
     state.locationStatus = 'requesting';
+
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-            fallbackLocation(resolve, "Not supported");
+            fallbackLocation(resolve, "Geolocation not supported");
             return;
         }
+
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 state.locationStatus = 'resolved';
                 resolve(state.userLoc);
             },
-            (error) => fallbackLocation(resolve, error.message),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            (error) => {
+                fallbackLocation(resolve, error.message);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
 }
 
 function fallbackLocation(resolve, reason) {
+    console.warn("Location fallback:", reason);
     const alertBox = document.getElementById("distance-alert");
+    
     if (alertBox) {
         alertBox.classList.remove("hidden");
-        alertBox.innerHTML = `📍 Location unavailable. Showing general results.`;
+        let message = `📍 Unable to get precise location.<br>Showing general nearby results.<br><br>`;
+        
+        if (isInstagramBrowser()) {
+            message += `👉 For accurate results, tap <b>•••/⋮</b> → <b>Open in Browser</b>`;
+        } else {
+            message += `👉 Please enable location permissions and refresh`;
+        }
+        alertBox.innerHTML = message;
     }
+
     state.userLoc = SG_CENTER;
     state.locationStatus = 'resolved';
     resolve(SG_CENTER);
 }
 
+// -----------------------------
+// MAIN ACTION HANDLER
+// -----------------------------
 async function handleAction(category) {
     if (state.isLocating) return; 
     
     const resultsDiv = document.getElementById("results");
+
+    // UI Updates
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
+
+    // Instagram Specific Warning
+    if (isInstagramBrowser()) {
+        const alertBox = document.getElementById("distance-alert");
+        if (alertBox) {
+            alertBox.classList.remove("hidden");
+            alertBox.innerHTML = `
+                ⚠️ Instagram may show inaccurate location.<br>
+                Tap <b>•••/⋮</b> → <b>Open in Browser</b> for best results.
+            `;
+        }
+    }
 
     if (state.currentCategory !== category) {
         resultsDiv.innerHTML = document.getElementById('skeleton-template').innerHTML.repeat(2);
@@ -90,6 +128,7 @@ async function handleAction(category) {
 
     try {
         state.isLocating = true;
+
         const [userCoords, text] = await Promise.all([
             getLocation(),
             state.currentCategory !== category 
@@ -102,43 +141,66 @@ async function handleAction(category) {
             state.dataCache = text.split("\n").slice(1)
                 .map((row, index) => ({ id: index, cols: secureParseCSV(row.trim()) }))
                 .filter(item => item.cols.length >= 5);
+
             state.pointers[category] = 0; 
         }
 
+        // Distance and Sorting
         if (category !== 'music') {
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
                 const lng = parseFloat(item.cols[3]);
                 item.dist = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
             });
+
             if (state.pointers[category] === 0) {
                 state.dataCache.sort((a, b) => a.dist - b.dist);
             }
         }
 
-        let selection = state.dataCache.slice(state.pointers[category], state.pointers[category] + 2);
+        let selection = state.dataCache.slice(
+            state.pointers[category],
+            state.pointers[category] + 2
+        );
+
         state.pointers[category] += 2;
 
         if (selection.length === 0 && state.dataCache.length > 0) {
-            resultsDiv.innerHTML = `<button onclick="resetList('${category}')" class="category-btn active" style="grid-column:1/-1; margin:20px auto;">🔄 Start Over</button>`;
+            resultsDiv.innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;">
+                    <button onclick="resetList('${category}')" class="category-btn active" style="margin: 0 auto; width: auto; padding: 10px 20px;">
+                        🔄 Start Over
+                    </button>
+                </div>`;
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
+            
+            // Re-scroll to top of results on mobile
+            window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
         }
+
     } catch (e) {
-        console.error(e);
+        console.error("Fetch error:", e);
     } finally {
         state.isLocating = false;
     }
 }
 
+// -----------------------------
+// RENDERING
+// -----------------------------
 function renderCard(item, category) {
     const [name, type, lat, lng, desc, musicUrl, mapsUrl] = item.cols;
+
+    const distValue = (item.dist && item.dist < 1000) ? `${item.dist.toFixed(1)}km away` : "";
+
     const imagePool = {
-        food: ["1555939594-58d7cb561ad1", "1540189549336-e6e99c3679fe"],
+        food: ["1555939594-58d7cb561ad1", "1540189549336-e6e99c3679fe", "1512621776951-a57141f2eefd"],
         store: ["1441986300917-64674bd600d8", "1472851294608-062f824d29cc"],
-        music: ["1511671782779-c97d3d27a1d4"]
+        music: ["1511671782779-c97d3d27a1d4", "1470225620780-dba8ba36b745"]
     };
+
     const pool = imagePool[category] || imagePool.food;
     const imgId = pool[item.id % pool.length];
 
@@ -147,18 +209,42 @@ function renderCard(item, category) {
     card.innerHTML = `
         <div class="img-container">
             <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" class="card-img">
-            <span class="dist-tag">${item.dist ? item.dist.toFixed(1)+'km' : ''}</span>
+            <span class="dist-tag"></span>
         </div>
         <div class="card-content">
-            <span class="category-tag">${type || category}</span>
-            <h3>${name}</h3>
-            <p>${desc}</p>
-            <div class="card-footer">
-                <a href="${category === 'music' ? musicUrl : mapsUrl}" target="_blank" class="btn-link">
-                    ${category === 'music' ? '🎵 Open Spotify' : '📍 Open Maps'}
-                </a>
-            </div>
+            <span class="category-tag"></span>
+            <h3></h3>
+            <p></p>
+            <div class="card-footer"></div>
         </div>`;
+
+    card.querySelector('h3').textContent = name || "Local Spot";
+    card.querySelector('p').textContent = desc || "Tap below for details";
+    card.querySelector('.category-tag').textContent = type || category;
+
+    const distTag = card.querySelector('.dist-tag');
+    if (distValue && category !== 'music') {
+        distTag.textContent = distValue;
+    } else {
+        distTag.remove();
+    }
+
+    const footer = card.querySelector('.card-footer');
+    const link = document.createElement('a');
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.className = "btn-link";
+
+    if (category === 'music' && musicUrl) {
+        link.href = musicUrl;
+        link.textContent = "🎵 Open Spotify ↗";
+        footer.appendChild(link);
+    } else if (mapsUrl) {
+        link.href = mapsUrl;
+        link.textContent = "📍 Open Google Maps ↗";
+        footer.appendChild(link);
+    }
+
     return card;
 }
 
@@ -167,17 +253,18 @@ function resetList(cat) {
     handleAction(cat);
 }
 
-// --- INIT (FIXED) ---
+// -----------------------------
+// INITIALIZATION
+// -----------------------------
 window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
 
-    // 1. Show the overlay immediately
     overlay.classList.remove('hidden');
 
-    // 2. ONLY start the app after the user interacts
     closeBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
-        handleAction('food'); // Initial load triggered by user click
+        // Trigger initial load on interaction to satisfy browser security
+        handleAction('food');
     });
 });
