@@ -202,10 +202,6 @@ async function handleAction(category, shouldScroll = true) {
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
-            
-            // Only scroll if shouldScroll is true
-            if (shouldScroll) {
-                window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
             }
         }
 
