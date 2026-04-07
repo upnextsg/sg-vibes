@@ -202,6 +202,7 @@ async function handleAction(category) {
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
+            window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
         }
 
     } catch (e) {
