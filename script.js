@@ -128,7 +128,7 @@ function fallbackLocation(resolve, reason) {
 // -----------------------------
 // MAIN ENGINE
 // -----------------------------
-async function handleAction(category) {
+async function handleAction(category, shouldScroll = true) {
     if (state.isLocating) return; 
     
     const resultsDiv = document.getElementById("results");
@@ -202,7 +202,11 @@ async function handleAction(category) {
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
-            window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
+            
+            // Only scroll if shouldScroll is true
+            if (shouldScroll) {
+                window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
+            }
         }
 
     } catch (e) {
@@ -316,5 +320,5 @@ window.addEventListener('DOMContentLoaded', () => {
         overlay.classList.add('hidden');
     });
 
-    handleAction('food');
+    handleAction('food', false);
 });
