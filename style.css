@@ -104,7 +104,21 @@ header {
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
     gap: 12px; 
-    margin-bottom: 35px; 
+    margin-bottom: 25px; 
+    
+    /* Stick to top logic */
+    position: -webkit-sticky;
+    position: sticky; 
+    top: 10px; 
+    z-index: 1000;
+    
+    /* Visual separation from scrolling content */
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .category-btn {
@@ -331,11 +345,40 @@ footer p {
 
 /* --- Responsive Breakpoints --- */
 @media (max-width: 500px) {
-    .container { padding: 40px 0; }
-    .button-group { gap: 8px; }
-    .category-btn { font-size: 0.8rem; padding: 15px 5px; }
-    .card-content { padding: 20px; }
-    .card-content h3 { font-size: 1.15rem; }
+    .container { padding: 20px 0; }
+    
+    .button-group { gap: 6px; }
+    .category-btn { font-size: 0.75rem; padding: 12px 2px; }
+
+    /* Show 2 options side-by-side to eliminate vertical scrolling */
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 12px;
+    }
+
+    .card { border-radius: 16px; }
+    .img-container { height: 110px; } /* Smaller images for mobile */
+    
+    .card-content { padding: 12px; }
+    .card-content h3 { 
+        font-size: 0.9rem; 
+        line-height: 1.2; 
+        margin: 4px 0; 
+    }
+    
+    /* Limit description to 2 lines to keep cards symmetrical */
+    .card-content p { 
+        font-size: 0.75rem; 
+        margin-bottom: 12px; 
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .btn-link { font-size: 0.7rem; padding: 8px 4px; }
+    .dist-tag { font-size: 0.6rem; padding: 3px 7px; top: 8px; right: 8px; }
 }
 
 @media (min-width: 1024px) {
