@@ -2,15 +2,20 @@ name: Generate XML Sitemap
 
 on:
   push:
-    branches: [ main ]  # Runs every time you push to main
+    branches: [ main ]
+  workflow_dispatch:
+
+# This tells the runner to use Node 24 even if an action is lagging behind
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   sitemap_job:
     runs-on: ubuntu-latest
-    name: Generate a sitemap
     steps:
     - name: Checkout the repo
-      uses: actions/checkout@v4
+      # Updated from v4 to v5 to support Node 24
+      uses: actions/checkout@v5 
       with:
         fetch-depth: 0 
 
@@ -26,6 +31,6 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add sitemap.xml
-          git commit -m "Automated sitemap update"
+          git commit -m "Automated sitemap update (Node 24)"
           git push
         fi
