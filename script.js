@@ -30,7 +30,7 @@ function heroRedirect(url) {
     const overlay = document.createElement('div');
     overlay.className = 'hero-transition';
     overlay.innerHTML = `
-        <h2>You're a Local Hero!</h2>
+        <h2>You're a Hero!</h2>
         <p>Your support helps our local food, shops, and musicians thrive.</p>
     `;
     document.body.appendChild(overlay);
@@ -38,7 +38,7 @@ function heroRedirect(url) {
     setTimeout(() => {
         window.open(url, '_blank');
         overlay.remove();
-    }, 2000);
+    }, 3000);
 }
 
 async function shareSpot(name, specificUrl) {
@@ -115,8 +115,9 @@ function fallbackLocation(resolve, reason) {
     const alertBox = document.getElementById("distance-alert");
     if (alertBox) {
         alertBox.classList.remove("hidden");
-        let message = `📍 Showing results across Singapore. For better accuracy, turn on location and refresh.`;
+        let message = `📍 Unable to get precise location. Showing results across Singapore.`;
         if (isInstagramBrowser()) message += `<br>👉 Tap <b>•••/⋮</b> → <b>Open in Browser</b>`;
+        else {message += `👉 For better accuracy, turn on location and refresh.`;}
         alertBox.innerHTML = message;
     }
     state.userLoc = SG_CENTER;
