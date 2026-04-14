@@ -480,3 +480,54 @@ footer p {
     }
     .toast-text { font-size: 0.8rem; }
 }
+
+.hero-transition {
+    position: fixed;
+    inset: 0;
+    background: var(--accent); /* Uses your red accent color */
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    animation: fadeInOut 1.2s forwards;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: scale(1.1); }
+    15% { opacity: 1; transform: scale(1); }
+    85% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.95); }
+}
+
+.hero-transition h2 { font-size: 2rem; margin-bottom: 10px; }
+.hero-transition p { font-weight: 500; opacity: 0.9; }
+
+.fab-share {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: white;
+    color: var(--text-dark);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 50px;
+    font-weight: 800;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    z-index: 9999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 2px solid var(--accent);
+    transition: transform 0.2s;
+}
+
+.fab-share:active { transform: scale(0.9); }
+
+/* Hide FAB when loading overlay is active to keep it clean */
+.loader-container:not(.hidden) ~ #app-share-fab {
+    display: none;
+}
