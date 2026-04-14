@@ -251,20 +251,31 @@ header {
 }
 
 .btn-link {
-    display: block; 
-    text-align: center; 
-    padding: 12px; 
-    background: #f3f4f6;
-    border-radius: 12px; 
-    text-decoration: none; 
-    color: var(--text-dark); 
-    font-weight: 700;
-    transition: 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
 }
 
-.btn-link:hover { 
-    background: var(--accent); 
-    color: white; 
+.btn-link:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-link:active {
+    transform: translateY(0);
+}
+
+.btn-share-secondary {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: var(--text-dark) !important;
+}
+
+.btn-share-secondary:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
 }
 
 /* --- Footer --- */
@@ -484,7 +495,10 @@ footer p {
 .hero-transition {
     position: fixed;
     inset: 0;
-    background: var(--accent); /* Uses your red accent color */
+    /* Deep glassmorphic background for better aesthetics */
+    background: rgba(10, 15, 30, 0.85); 
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 100000;
     display: flex;
     flex-direction: column;
@@ -492,18 +506,32 @@ footer p {
     justify-content: center;
     color: white;
     text-align: center;
-    animation: fadeInOut 1.2s forwards;
+    /* Smooth fade and scale effect */
+    animation: heroMoment 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-@keyframes fadeInOut {
-    0% { opacity: 0; transform: scale(1.1); }
+@keyframes heroMoment {
+    0% { opacity: 0; transform: scale(1.05); }
     15% { opacity: 1; transform: scale(1); }
     85% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 0; transform: scale(0.98); }
 }
 
-.hero-transition h2 { font-size: 2rem; margin-bottom: 10px; }
-.hero-transition p { font-weight: 500; opacity: 0.9; }
+.hero-transition h2 { 
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.2rem; 
+    margin-bottom: 12px;
+    background: linear-gradient(to right, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-transition p { 
+    font-size: 1.1rem;
+    font-weight: 500; 
+    opacity: 0.9;
+    max-width: 80%;
+}
 
 .fab-share {
     position: fixed;
