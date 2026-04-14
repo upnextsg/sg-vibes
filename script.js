@@ -38,24 +38,40 @@ function showHeroToast() {
     }, 3500);
 }
 
-// NEW: Native Share functionality to advertise for local shops
-async function shareSpot(name) {
+// Updated Share Logic: Shares the specific item link
+async function shareSpot(name, specificUrl) {
     const shareData = {
-        title: 'SG Vibes',
-        text: `Check out ${name}! Found this local gem on SG Vibes. Support local! 🇸🇬`,
-        url: 'https://upnextinsg.github.io/sg-vibes/'
+        title: `Check out ${name} on SG Vibes!`,
+        text: `Supporting local: Found ${name} on SG Vibes. Check it out! 🇸🇬`,
+        url: specificUrl // Now shares the Google Maps or Spotify link
     };
+
     try {
         if (navigator.share) {
             await navigator.share(shareData);
         } else {
-            // Fallback for desktop: Copy link to clipboard
-            await navigator.clipboard.writeText(shareData.url);
-            alert("Link copied! Share it to support local.");
+            await navigator.clipboard.writeText(specificUrl);
+            alert("Business link copied to clipboard!");
         }
-    } catch (err) {
-        console.log('Share cancelled or failed', err);
-    }
+    } catch (err) { console.log('Share failed', err); }
+}
+
+// Intercept function for the "Hero" transition
+function heroRedirect(url) {
+    // Create the overlay element
+    const overlay = document.createElement('div');
+    overlay.className = 'hero-transition';
+    overlay.innerHTML = `
+        <h2>🇸🇬 Hero Mode: ON</h2>
+        <p>You're supporting a local business.<br>Singapore thanks you!</p>
+    `;
+    document.body.appendChild(overlay);
+
+    // Short delay for impact, then open link
+    setTimeout(() => {
+        window.open(url, '_blank');
+        overlay.remove();
+    }, 1100);
 }
 
 // -----------------------------
@@ -237,29 +253,29 @@ function renderCard(item, category) {
     }
 
     const footer = card.querySelector('.card-footer');
-    
-    // Create the Main Action Button (Maps/Spotify)
-    const link = document.createElement('a');
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.className = "btn-link";
-    link.href = (category === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
-    link.textContent = (category === 'music') ? "🎵 Open Spotify ↗" : "📍 Open Google Maps ↗";
-    
-    // NEW: When the user clicks to visit/listen, they become a hero
-    link.onclick = () => showHeroToast();
-    
-    footer.appendChild(link);
+    footer.style.display = "flex";
+    footer.style.gap = "8px";
 
-    // NEW: Create the Share Button
+    const targetUrl = (category === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
+    const actionText = (category === 'music') ? "🎵 Listen" : "📍 Directions";
+
+    // Primary Action Button
+    const mainBtn = document.createElement('button');
+    mainBtn.className = "btn-link";
+    mainBtn.style.flex = "2";
+    mainBtn.textContent = actionText;
+    mainBtn.onclick = () => heroRedirect(targetUrl);
+    
+    // High-Visibility Share Button
     const shareBtn = document.createElement('button');
     shareBtn.className = "btn-link";
-    shareBtn.style.marginTop = "8px";
-    shareBtn.style.background = "transparent";
-    shareBtn.style.border = "1px solid #ddd";
-    shareBtn.innerHTML = "🔗 Share with a friend";
-    shareBtn.onclick = () => shareSpot(name);
+    shareBtn.style.flex = "1";
+    shareBtn.style.background = "#eef2f3"; // Subtle contrast
+    shareBtn.style.color = "var(--text-dark)";
+    shareBtn.innerHTML = "🔗 Share";
+    shareBtn.onclick = () => shareSpot(name, targetUrl);
     
+    footer.appendChild(mainBtn);
     footer.appendChild(shareBtn);
 
     return card;
@@ -268,6 +284,20 @@ function renderCard(item, category) {
 function resetList(cat) {
     state.pointers[cat] = 0;
     handleAction(cat);
+}
+
+function shareApp() {
+    const appData = {
+        title: 'SG Vibes',
+        text: 'Discover the best local food, shops, and music in Singapore! 🇸🇬',
+        url: 'https://upnextinsg.github.io/sg-vibes/'
+    };
+    if (navigator.share) {
+        navigator.share(appData);
+    } else {
+        navigator.clipboard.writeText(appData.url);
+        alert("App link copied! Spread the vibes.");
+    }
 }
 
 // -----------------------------
