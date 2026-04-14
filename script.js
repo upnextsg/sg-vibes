@@ -18,7 +18,48 @@ let state = {
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
 // -----------------------------
-// HELPERS
+// NEW: UI ENHANCEMENTS (Loader & Hero Toast)
+// -----------------------------
+function toggleLoader(show) {
+    const loader = document.getElementById('loading-overlay');
+    if (show) {
+        loader.classList.remove('hidden');
+    } else {
+        loader.classList.add('hidden');
+    }
+}
+
+function showHeroToast() {
+    const toast = document.getElementById('hero-toast');
+    toast.classList.remove('hidden');
+    // Hide toast after 3.5 seconds
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 3500);
+}
+
+// NEW: Native Share functionality to advertise for local shops
+async function shareSpot(name) {
+    const shareData = {
+        title: 'SG Vibes',
+        text: `Check out ${name}! Found this local gem on SG Vibes. Support local! 🇸🇬`,
+        url: 'https://upnextinsg.github.io/sg-vibes/'
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            // Fallback for desktop: Copy link to clipboard
+            await navigator.clipboard.writeText(shareData.url);
+            alert("Link copied! Share it to support local.");
+        }
+    } catch (err) {
+        console.log('Share cancelled or failed', err);
+    }
+}
+
+// -----------------------------
+// HELPERS & GEOLOCATION
 // -----------------------------
 function isInstagramBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -47,14 +88,8 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// -----------------------------
-// GEOLOCATION ENGINE
-// -----------------------------
 async function getLocation() {
-    if (state.locationStatus === 'resolved' || state.locationStatus === 'requesting') {
-        return state.userLoc || SG_CENTER;
-    }
-
+    if (state.locationStatus === 'resolved') return state.userLoc || SG_CENTER;
     state.locationStatus = 'requesting';
 
     return new Promise((resolve) => {
@@ -72,27 +107,19 @@ async function getLocation() {
             (error) => {
                 fallbackLocation(resolve, error.message);
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     });
 }
 
 function fallbackLocation(resolve, reason) {
-    console.warn("Location fallback:", reason);
     const alertBox = document.getElementById("distance-alert");
-    
     if (alertBox) {
         alertBox.classList.remove("hidden");
-        let message = `📍 Unable to get precise location.<br>Showing general nearby results.<br><br>`;
-        
-        if (isInstagramBrowser()) {
-            message += `👉 For accurate results, tap <b>•••/⋮</b> → <b>Open in Browser</b>`;
-        } else {
-            message += `👉 Please enable location permissions and refresh`;
-        }
+        let message = `📍 Unable to get precise location. Showing general results.<br>`;
+        if (isInstagramBrowser()) message += `👉 For accuracy, tap <b>•••</b> → <b>Open in Browser</b>`;
         alertBox.innerHTML = message;
     }
-
     state.userLoc = SG_CENTER;
     state.locationStatus = 'resolved';
     resolve(SG_CENTER);
@@ -110,21 +137,8 @@ async function handleAction(category) {
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
 
-    // Instagram Specific Warning
-    if (isInstagramBrowser()) {
-        const alertBox = document.getElementById("distance-alert");
-        if (alertBox) {
-            alertBox.classList.remove("hidden");
-            alertBox.innerHTML = `
-                ⚠️ Instagram may show inaccurate location.<br>
-                Tap <b>•••/⋮</b> → <b>Open in Browser</b> for best results.
-            `;
-        }
-    }
-
-    if (state.currentCategory !== category) {
-        resultsDiv.innerHTML = document.getElementById('skeleton-template').innerHTML.repeat(2);
-    }
+    // Trigger NEW Loader
+    toggleLoader(true);
 
     try {
         state.isLocating = true;
@@ -145,24 +159,18 @@ async function handleAction(category) {
             state.pointers[category] = 0; 
         }
 
-        // Distance and Sorting
         if (category !== 'music') {
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
                 const lng = parseFloat(item.cols[3]);
                 item.dist = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
             });
-
             if (state.pointers[category] === 0) {
                 state.dataCache.sort((a, b) => a.dist - b.dist);
             }
         }
 
-        let selection = state.dataCache.slice(
-            state.pointers[category],
-            state.pointers[category] + 2
-        );
-
+        let selection = state.dataCache.slice(state.pointers[category], state.pointers[category] + 2);
         state.pointers[category] += 2;
 
         if (selection.length === 0 && state.dataCache.length > 0) {
@@ -175,24 +183,23 @@ async function handleAction(category) {
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
-            
-            // Re-scroll to top of results on mobile
-            window.scrollTo({ top: resultsDiv.offsetTop - 100, behavior: 'smooth' });
+            window.scrollTo({ top: resultsDiv.offsetTop - 120, behavior: 'smooth' });
         }
 
     } catch (e) {
         console.error("Fetch error:", e);
     } finally {
         state.isLocating = false;
+        // Hide NEW Loader after 500ms to ensure a smooth transition
+        setTimeout(() => toggleLoader(false), 500);
     }
 }
 
 // -----------------------------
-// RENDERING
+// RENDERING (With NEW Share & Hero Toast Logic)
 // -----------------------------
 function renderCard(item, category) {
     const [name, type, lat, lng, desc, musicUrl, mapsUrl] = item.cols;
-
     const distValue = (item.dist && item.dist < 1000) ? `${item.dist.toFixed(1)}km away` : "";
 
     const imagePool = {
@@ -230,20 +237,30 @@ function renderCard(item, category) {
     }
 
     const footer = card.querySelector('.card-footer');
+    
+    // Create the Main Action Button (Maps/Spotify)
     const link = document.createElement('a');
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     link.className = "btn-link";
+    link.href = (category === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
+    link.textContent = (category === 'music') ? "🎵 Open Spotify ↗" : "📍 Open Google Maps ↗";
+    
+    // NEW: When the user clicks to visit/listen, they become a hero
+    link.onclick = () => showHeroToast();
+    
+    footer.appendChild(link);
 
-    if (category === 'music' && musicUrl) {
-        link.href = musicUrl;
-        link.textContent = "🎵 Open Spotify ↗";
-        footer.appendChild(link);
-    } else if (mapsUrl) {
-        link.href = mapsUrl;
-        link.textContent = "📍 Open Google Maps ↗";
-        footer.appendChild(link);
-    }
+    // NEW: Create the Share Button
+    const shareBtn = document.createElement('button');
+    shareBtn.className = "btn-link";
+    shareBtn.style.marginTop = "8px";
+    shareBtn.style.background = "transparent";
+    shareBtn.style.border = "1px solid #ddd";
+    shareBtn.innerHTML = "🔗 Share with a friend";
+    shareBtn.onclick = () => shareSpot(name);
+    
+    footer.appendChild(shareBtn);
 
     return card;
 }
@@ -259,12 +276,10 @@ function resetList(cat) {
 window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
-
     overlay.classList.remove('hidden');
 
     closeBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
-        // Trigger initial load on interaction to satisfy browser security
         handleAction('food');
     });
 });
