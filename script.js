@@ -17,9 +17,8 @@ let state = {
 
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
-// -----------------------------
-// NEW: UI ENHANCEMENTS (Loader & Hero Toast)
-// -----------------------------
+// --- UI ENHANCEMENTS ---
+
 function toggleLoader(show) {
     const loader = document.getElementById('loading-overlay');
     if (show) {
@@ -29,16 +28,23 @@ function toggleLoader(show) {
     }
 }
 
-function showHeroToast() {
-    const toast = document.getElementById('hero-toast');
-    toast.classList.remove('hidden');
-    // Hide toast after 3.5 seconds
+// Updated Hero Transition Logic (Aesthetic & Duration Fix)
+function heroRedirect(url) {
+    const overlay = document.createElement('div');
+    overlay.className = 'hero-transition';
+    overlay.innerHTML = `
+        <h2>You're a Local Hero!</h2>
+        <p>Your support helps our local food, shops, and musicians thrive.</p>
+    `;
+    document.body.appendChild(overlay);
+
+    // 2-second delay for impact before opening link
     setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 3500);
+        window.open(url, '_blank');
+        overlay.remove();
+    }, 2000);
 }
 
-// Updated Share Logic: Shares the specific item link
 async function shareSpot(name, specificUrl) {
     const shareData = {
         title: name,
@@ -56,25 +62,8 @@ async function shareSpot(name, specificUrl) {
     } catch (err) { console.log('Share aborted'); }
 }
 
-// Intercept function for the "Hero" transition
-function heroRedirect(url) {
-    const overlay = document.createElement('div');
-    overlay.className = 'hero-transition';
-    overlay.innerHTML = `
-        <p>Your support helps our local food, shops, and musicians thrive.</p>
-    `;
-    document.body.appendChild(overlay);
+// --- HELPERS & GEOLOCATION ---
 
-    // Extended delay to 2 seconds for readability
-    setTimeout(() => {
-        window.open(url, '_blank');
-        overlay.remove();
-    }, 3000);
-}
-
-// -----------------------------
-// HELPERS & GEOLOCATION
-// -----------------------------
 function isInstagramBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     return /Instagram/i.test(ua);
@@ -108,7 +97,7 @@ async function getLocation() {
 
     return new Promise((resolve) => {
         if (!navigator.geolocation) {
-            fallbackLocation(resolve, "Geolocation not supported");
+            fallbackLocation(resolve, "Not supported");
             return;
         }
 
@@ -118,10 +107,8 @@ async function getLocation() {
                 state.locationStatus = 'resolved';
                 resolve(state.userLoc);
             },
-            (error) => {
-                fallbackLocation(resolve, error.message);
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            (error) => fallbackLocation(resolve, error.message),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
     });
 }
@@ -130,8 +117,8 @@ function fallbackLocation(resolve, reason) {
     const alertBox = document.getElementById("distance-alert");
     if (alertBox) {
         alertBox.classList.remove("hidden");
-        let message = `📍 Unable to get precise location. Showing general results.<br>`;
-        if (isInstagramBrowser()) message += `👉 For accuracy, tap <b>•••</b> → <b>Open in Browser</b>`;
+        let message = `📍 Showing results across Singapore. For better accuracy, turn on location.`;
+        if (isInstagramBrowser()) message += `<br>👉 Tap <b>•••</b> → <b>Open in Browser</b>`;
         alertBox.innerHTML = message;
     }
     state.userLoc = SG_CENTER;
@@ -139,19 +126,15 @@ function fallbackLocation(resolve, reason) {
     resolve(SG_CENTER);
 }
 
-// -----------------------------
-// MAIN ACTION HANDLER
-// -----------------------------
+// --- MAIN ACTION HANDLER ---
+
 async function handleAction(category) {
     if (state.isLocating) return; 
     
     const resultsDiv = document.getElementById("results");
-
-    // UI Updates
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
 
-    // Trigger NEW Loader
     toggleLoader(true);
 
     try {
@@ -169,10 +152,10 @@ async function handleAction(category) {
             state.dataCache = text.split("\n").slice(1)
                 .map((row, index) => ({ id: index, cols: secureParseCSV(row.trim()) }))
                 .filter(item => item.cols.length >= 5);
-
             state.pointers[category] = 0; 
         }
 
+        // Distance sorting for non-music categories
         if (category !== 'music') {
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
@@ -185,12 +168,18 @@ async function handleAction(category) {
         }
 
         let selection = state.dataCache.slice(state.pointers[category], state.pointers[category] + 2);
+        
+        // Handle end of list or single result cases
+        if (selection.length === 1 && state.dataCache.length > 1) {
+             selection.push(state.dataCache[0]); // Fill slot if only one left
+        }
+
         state.pointers[category] += 2;
 
         if (selection.length === 0 && state.dataCache.length > 0) {
             resultsDiv.innerHTML = `
                 <div style="grid-column:1/-1;text-align:center;padding:40px;">
-                    <button onclick="resetList('${category}')" class="category-btn active" style="margin: 0 auto; width: auto; padding: 10px 20px;">
+                    <button onclick="resetList('${category}')" class="category-btn active" style="margin: 0 auto; width: auto; padding: 12px 24px;">
                         🔄 Start Over
                     </button>
                 </div>`;
@@ -201,56 +190,66 @@ async function handleAction(category) {
         }
 
     } catch (e) {
-        console.error("Fetch error:", e);
+        console.error("Selection Error:", e);
     } finally {
         state.isLocating = false;
-        // Hide NEW Loader after 500ms to ensure a smooth transition
-        setTimeout(() => toggleLoader(false), 500);
+        setTimeout(() => toggleLoader(false), 600);
     }
 }
 
-// -----------------------------
-// RENDERING (With NEW Share & Hero Toast Logic)
-// -----------------------------
+// --- RENDERING LOGIC ---
+
 function renderCard(item, category) {
-    // ... (Keep existing data extraction logic at the top of the function)
     const [name, type, lat, lng, desc, musicUrl, mapsUrl] = item.cols;
     
-    // ... (Keep existing card creation logic)
+    // Define images based on category to fix the imgId error
+    const imgMap = {
+        food: "1504674900263-8512e9558303",
+        store: "1441986300917-64674bd600d8",
+        music: "1511671782779-c97d3d27a1d4"
+    };
+    const imgId = imgMap[category] || "1504674900263-8512e9558303";
+
     const card = document.createElement("div");
     card.className = "card";
+    
+    // Distance display
+    const distText = item.dist ? `${item.dist.toFixed(1)}km away` : "Discover local";
+
     card.innerHTML = `
         <div class="img-container">
-            <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" class="card-img">
-            <span class="dist-tag"></span>
+            <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" class="card-img" alt="${name}">
+            <span class="dist-tag">${distText}</span>
         </div>
         <div class="card-content">
-            <span class="category-tag"></span>
-            <h3></h3>
-            <p></p>
+            <span class="category-tag">${type || category}</span>
+            <h3>${name || "Local Spot"}</h3>
+            <p>${desc || "Tap below for details"}</p>
             <div class="card-footer" style="display:flex; gap:8px;"></div>
         </div>`;
-
-    card.querySelector('h3').textContent = name || "Local Spot";
-    card.querySelector('p').textContent = desc || "Tap below for details";
-    card.querySelector('.category-tag').textContent = type || category;
 
     const footer = card.querySelector('.card-footer');
     const targetUrl = (category === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
     
-    // Primary Action: Open Google Maps or Spotify
+    // Primary Action Button
     const mainBtn = document.createElement('button');
     mainBtn.className = "btn-link";
     mainBtn.style.flex = "2";
-    // Specific Labels for Clarity
+    mainBtn.style.background = "var(--accent)";
+    mainBtn.style.color = "white";
+    mainBtn.style.padding = "12px";
+    mainBtn.style.borderRadius = "12px";
+    mainBtn.style.fontWeight = "700";
     mainBtn.textContent = (category === 'music') ? "🎵 Open Spotify" : "📍 Open Google Maps";
     mainBtn.onclick = () => heroRedirect(targetUrl);
     
-    // Secondary Action: Share this specific item
+    // Share Button
     const shareBtn = document.createElement('button');
-    // Using the new secondary class for hover effects
     shareBtn.className = "btn-link btn-share-secondary";
     shareBtn.style.flex = "1";
+    shareBtn.style.padding = "12px";
+    shareBtn.style.borderRadius = "12px";
+    shareBtn.style.fontWeight = "700";
     shareBtn.innerHTML = "🔗 Share";
     shareBtn.onclick = () => shareSpot(name, targetUrl);
     
@@ -279,16 +278,17 @@ function shareApp() {
     }
 }
 
-// -----------------------------
-// INITIALIZATION
-// -----------------------------
+// --- INITIALIZATION ---
+
 window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
+    
+    // Show tutorial on first load
     overlay.classList.remove('hidden');
 
     closeBtn.addEventListener('click', () => {
         overlay.classList.add('hidden');
-        handleAction('food');
+        handleAction('food'); // Initial trigger
     });
 });
