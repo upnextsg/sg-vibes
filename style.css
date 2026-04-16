@@ -78,14 +78,12 @@ header {
 
 .header-instructions {
     margin: 8px auto;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05); /* Very subtle glass effect */
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50px; /* Pill shape for modern look */
-    padding: 6px 15px;
-    width: 95%;
-    max-width: 550px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    padding: 6px 16px;
+    width: fit-content;
+    backdrop-filter: blur(8px);
 }
 
 .instruction-title {
@@ -97,15 +95,16 @@ header {
 
 .instruction-steps {
     display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    font-size: 0.7rem; /* Smaller, professional text */
+    flex-direction: column; /* Stacks vertically so no horizontal scroll */
+    gap: 2px;
+}
+
+.instruction-steps span {
+    font-size: 0.7rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-    white-space: nowrap; /* Keeps it on one line */
-    overflow-x: auto; /* Allows swiping on tiny screens */
+    color: rgba(255, 255, 255, 0.8);
+    display: block;
+    line-height: 1.4;
 }
 
 .header-disclaimer {
@@ -557,19 +556,13 @@ footer p {
 .hero-transition {
     position: fixed;
     inset: 0;
-    /* Deep glassmorphic background for better aesthetics */
-    background: rgba(10, 15, 30, 0.85); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    z-index: 100000;
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: white;
+    z-index: 9999;
     text-align: center;
-    /* Smooth fade and scale effect */
-    animation: heroMoment 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes heroMoment {
