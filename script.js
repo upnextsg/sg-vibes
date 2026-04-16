@@ -204,41 +204,41 @@ async function handleAction(category) {
 
 function renderCard(item, category) {
     const [name, type, lat, lng, desc, musicUrl, mapsUrl] = item.cols;
-    
-    // 1. Maintain specific images for categories
+    const activeCat = category.toLowerCase().trim();
+
+    // RESTORED: Your original rotating image arrays
     const imgMap = {
-        food: "1504674900263-8512e9558303",
-        store: "1441986300917-64674bd600d8",
-        music: "1511671782779-c97d3d27a1d4"
+        food: ["1555939594-58d7cb561ad1", "1540189549336-e6e99c3679fe", "1512621776951-a57141f2eefd"],
+        store: ["1441986300917-64674bd600d8", "1472851294608-062f824d29cc"],
+        music: ["1511671782779-c97d3d27a1d4", "1470225620780-dba8ba36b745"]
     };
-    const imgId = imgMap[category] || "1504674900263-8512e9558303";
+
+    // Logic: Cycle through the array based on the item's unique index
+    const categoryImages = imgMap[activeCat] || imgMap.food;
+    const imgId = categoryImages[item.id % categoryImages.length];
 
     const card = document.createElement("div");
     card.className = "card";
     
-    // 2. Setup distance text
     const distText = item.dist ? `${item.dist.toFixed(1)}km away` : "Discover local";
 
-    // 3. Build Card Structure
-    // Note: The <p> tag here will show all text if you apply the CSS fix provided earlier
     card.innerHTML = `
         <div class="img-container">
-            <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" class="card-img" alt="${name}">
+            <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" 
+                 class="card-img" alt="${name}" loading="lazy">
             <span class="dist-tag">${distText}</span>
         </div>
         <div class="card-content">
             <span class="category-tag">${type || category}</span>
             <h3>${name || "Local Spot"}</h3>
             <p>${desc || "Tap below for details"}</p>
-            <div class="card-footer" style="display:flex; gap:8px; align-items: stretch;"></div>
+            <div class="card-footer" style="display:flex; gap:8px; margin-top:auto;"></div>
         </div>`;
 
     const footer = card.querySelector('.card-footer');
+    const targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
     
-    // 4. Determine Target URL
-    const targetUrl = (category === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
-    
-    // 5. Primary Action Button (The "Direct Click" Fix)
+    // Primary Action (Maps/Spotify)
     const mainBtn = document.createElement('button');
     mainBtn.className = "btn-link";
     mainBtn.style.flex = "2";
@@ -247,32 +247,32 @@ function renderCard(item, category) {
     mainBtn.style.padding = "12px";
     mainBtn.style.borderRadius = "12px";
     mainBtn.style.fontWeight = "700";
-    mainBtn.style.cursor = "pointer";
-    mainBtn.textContent = (category === 'music') ? "🎵 Open Spotify" : "📍 Open Google Maps";
+    mainBtn.textContent = (activeCat === 'music') ? "🎵 Open Spotify" : "📍 Open Google Maps";
     
     mainBtn.onclick = () => {
         if (targetUrl && targetUrl !== "#") {
-            // CRITICAL: We call window.open IMMEDIATELY in the click event.
-            // This bypasses the iOS popup blocker and the Android timeout error.
-            window.open(targetUrl, '_blank');
-            // Show the visual feedback simultaneously
+            // iOS/Android Fix: Trigger the UI overlay immediately
             showHeroOverlay();
+            
+            // 150ms delay allows the browser to paint the Hero Message 
+            // before the OS switches focus to the external app/tab
+            setTimeout(() => {
+                window.open(targetUrl, '_blank');
+            }, 150);
         } else {
-            alert("Location link is currently unavailable.");
+            alert("Link is currently unavailable.");
         }
     };
     
-    // 6. Share Button
     const shareBtn = document.createElement('button');
     shareBtn.className = "btn-link btn-share-secondary";
     shareBtn.style.flex = "1";
     shareBtn.style.padding = "12px";
     shareBtn.style.borderRadius = "12px";
     shareBtn.style.fontWeight = "700";
-    shareBtn.style.cursor = "pointer";
     shareBtn.innerHTML = "🔗 Share";
     shareBtn.onclick = (e) => {
-        e.stopPropagation(); // Prevents triggering the main link
+        e.stopPropagation();
         shareSpot(name, targetUrl);
     };
     
