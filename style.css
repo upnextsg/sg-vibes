@@ -577,6 +577,9 @@ footer p {
     width: 100%;
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     animation: heroPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero-icon { font-size: 3rem; margin-bottom: 15px; }
@@ -646,7 +649,9 @@ footer p {
     font-size: 1.1rem;
     font-weight: 500; 
     opacity: 0.9;
-    max-width: 80%;
+    max-width: 320px;   /* fixed width instead of % */
+    margin: 0 auto;     /* 🔥 forces true centering */
+    text-align: center; /* ensures alignment */
 }
 
 .fab-share {
