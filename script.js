@@ -75,6 +75,13 @@ function isInstagramBrowser() {
     return /Instagram/i.test(ua);
 }
 
+if (isInstagramBrowser() && !sessionStorage.getItem('igReloaded')) {
+    sessionStorage.setItem('igReloaded', 'true');
+    setTimeout(() => {
+        window.location.href = window.location.href;
+    }, 300);
+}
+
 const secureParseCSV = (row) => {
     const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
     return row.split(regex).map(cell => {
@@ -318,17 +325,26 @@ function shareApp() {
 window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
-    
-    // 1. Ensure the app actually loads content once the tutorial is dismissed
+
+    let hasStarted = false;
+
+    function startApp() {
+        if (hasStarted) return;
+        hasStarted = true;
+        handleAction('food');
+    }
+
     if (overlay) {
         overlay.classList.remove('hidden');
+
         closeBtn?.addEventListener('click', () => {
             overlay.classList.add('hidden');
-            // Re-enabling this ensures the app isn't a blank screen
-            handleAction('food'); 
+            startApp();
         });
+
+        // 🔥 FAILSAFE: if anything breaks, auto-start after 1.5s
+        setTimeout(startApp, 1500);
     } else {
-        // Fallback: If no tutorial, load food by default
-        handleAction('food');
+        startApp();
     }
 });
