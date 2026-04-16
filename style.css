@@ -77,14 +77,15 @@ header {
 }
 
 .header-instructions {
-    margin: 10px auto;
-    background: rgba(255, 255, 255, 0.05);
+    margin: 8px auto;
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 10px 15px;
-    width: 100%;
-    max-width: 600px;
-    backdrop-filter: blur(10px);
+    border-radius: 50px; /* Pill shape for modern look */
+    padding: 6px 15px;
+    width: 95%;
+    max-width: 550px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .instruction-title {
@@ -96,21 +97,22 @@ header {
 
 .instruction-steps {
     display: flex;
-    flex-direction: row; /* Horizontal layout */
-    justify-content: space-around;
-    flex-wrap: wrap; /* Wraps on small screens but stays slim */
-    gap: 10px;
-    font-size: 0.75rem;
-    opacity: 0.9;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.7rem; /* Smaller, professional text */
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap; /* Keeps it on one line */
+    overflow-x: auto; /* Allows swiping on tiny screens */
 }
 
 .header-disclaimer {
-    display: inline-block;
-    font-size: 0.7rem;
-    opacity: 0.6;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
+    font-size: 0.6rem;
+    opacity: 0.5;
+    margin-bottom: 5px;
+    text-align: center;
 }
 
 /* --- Navigation --- */
@@ -283,11 +285,11 @@ header {
     letter-spacing: -0.5px; 
 }
 
-.card-content p { 
-    font-size: 0.75rem !important; 
-    margin-bottom: 8px !important;
+.card-content p {
+    font-size: 0.75rem;
     line-height: 1.4;
-    /* Removed the webkit-box and overflow hidden properties */
+    overflow: visible;
+    display: block;
 }
 
 .card-footer {
