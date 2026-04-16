@@ -27,6 +27,10 @@ function toggleLoader(show) {
 }
 
 function heroRedirect(url) {
+    // 1. Open a blank tab IMMEDIATELY to bypass Apple's strict popup blocker
+    const newTab = window.open('about:blank', '_blank');
+
+    // 2. Create and show your hero transition overlay
     const overlay = document.createElement('div');
     overlay.className = 'hero-transition';
     overlay.innerHTML = `
@@ -35,10 +39,15 @@ function heroRedirect(url) {
     `;
     document.body.appendChild(overlay);
 
+    // 3. After the animation finishes, route the new tab to the actual URL
     setTimeout(() => {
-        window.open(url, '_blank');
+        if (newTab && !newTab.closed) {
+            newTab.location.href = url; // Send Apple users to the right place
+        } else {
+            window.location.href = url; // Fallback just in case
+        }
         overlay.remove();
-    }, 3000);
+    }, 2500); // Reduced slightly to 2.5s so users don't close the blank tab prematurely
 }
 
 async function shareSpot(name, specificUrl) {
