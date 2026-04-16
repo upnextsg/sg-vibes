@@ -27,18 +27,28 @@ function toggleLoader(show) {
 }
 
 function showHeroOverlay() {
+    // Remove existing if any
+    const existing = document.querySelector('.hero-transition');
+    if (existing) existing.remove();
+
     const overlay = document.createElement('div');
     overlay.className = 'hero-transition';
     overlay.innerHTML = `
-        <h2>You're a Hero!</h2>
-        <p>Your support helps our local food, shops, and musicians thrive.</p>
+        <div class="hero-card">
+            <div class="hero-icon">🇸🇬</div>
+            <h2>You're a Local Hero!</h2>
+            <p>Your support helps our local food, shops, and musicians thrive.</p>
+            <div class="hero-loader"></div>
+        </div>
     `;
     document.body.appendChild(overlay);
     
-    // Remove overlay after it fades out
+    // The overlay stays visible so when the user comes back from Maps, 
+    // they still see the "Thank You" state before it fades.
     setTimeout(() => {
-        overlay.remove();
-    }, 2500);
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 800);
+    }, 3500);
 }
 
 async function shareSpot(name, specificUrl) {
@@ -250,19 +260,21 @@ function renderCard(item, category) {
     mainBtn.textContent = (activeCat === 'music') ? "🎵 Open Spotify" : "📍 Open Google Maps";
     
     mainBtn.onclick = () => {
-        if (targetUrl && targetUrl !== "#") {
-            // iOS/Android Fix: Trigger the UI overlay immediately
-            showHeroOverlay();
-            
-            // 150ms delay allows the browser to paint the Hero Message 
-            // before the OS switches focus to the external app/tab
-            setTimeout(() => {
-                window.open(targetUrl, '_blank');
-            }, 150);
-        } else {
-            alert("Link is currently unavailable.");
-        }
-    };
+    if (targetUrl && targetUrl !== "#") {
+        // 1. Show the Hero UI immediately
+        showHeroOverlay();
+        
+        // 2. DELAY the tab opening. 
+        // 1 second (1000ms) is the "Sweet Spot":
+        // Long enough for the user to read "You're a Hero", 
+        // but short enough that the browser doesn't block the popup.
+        setTimeout(() => {
+            window.open(targetUrl, '_blank');
+        }, 1000); 
+    } else {
+        alert("Link unavailable.");
+    }
+};
     
     const shareBtn = document.createElement('button');
     shareBtn.className = "btn-link btn-share-secondary";
@@ -307,11 +319,16 @@ window.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
     
-    if (overlay) overlay.classList.remove('hidden');
-
-    closeBtn?.addEventListener('click', () => {
-        overlay.classList.add('hidden');
-        // REMOVED: handleAction('food'); 
-        // Now users see the instructions and must choose a category themselves.
-    });
+    // 1. Ensure the app actually loads content once the tutorial is dismissed
+    if (overlay) {
+        overlay.classList.remove('hidden');
+        closeBtn?.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            // Re-enabling this ensures the app isn't a blank screen
+            handleAction('food'); 
+        });
+    } else {
+        // Fallback: If no tutorial, load food by default
+        handleAction('food');
+    }
 });
