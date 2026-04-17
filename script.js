@@ -150,17 +150,9 @@ async function handleAction(category) {
     
     const resultsDiv = document.getElementById("results");
     const buttonGroup = document.querySelector('.button-group');
+
     if (buttonGroup && !buttonGroup.classList.contains('sticky-active')) {
         buttonGroup.classList.add('sticky-active');
-
-        // Smooth scroll (cross-device safe)
-        const yOffset = -10;
-        const y = buttonGroup.getBoundingClientRect().top + window.pageYOffset + yOffset;
-
-        window.scrollTo({
-            top: y,
-            behavior: 'smooth'
-        });
     }
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
