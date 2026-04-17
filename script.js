@@ -36,7 +36,7 @@ function showHeroOverlay() {
     overlay.innerHTML = `
         <div class="hero-card">
             <div class="hero-icon">🇸🇬</div>
-            <h2>You're a Local Hero!</h2>
+            <h2>You're a Hero!</h2>
             <p>Your support helps our local food, shops, and musicians thrive.</p>
             <div class="hero-loader"></div>
         </div>
@@ -279,25 +279,19 @@ function renderCard(item, category) {
     mainBtn.style.fontWeight = "700";
     mainBtn.textContent = (activeCat === 'music') ? "🎵 Open Spotify" : "📍 Open Google Maps";
     
-    mainBtn.onclick = () => {
+   mainBtn.onclick = () => {
     if (!targetUrl || targetUrl === "#") {
         alert("Link unavailable.");
         return;
     }
 
-    // ✅ Open blank tab immediately (prevents popup blocking)
-    const newTab = window.open('', '_blank');
-
+    // ✅ Show hero first
     showHeroOverlay();
 
+    // ✅ Then navigate in SAME TAB
     setTimeout(() => {
-        if (newTab) {
-            newTab.location.href = targetUrl;
-        } else {
-            // Fallback (very rare)
-            window.location.href = targetUrl;
-        }
-    }, 1200);
+        window.location.href = targetUrl;
+    }, 1200); // 1.2s = visible but not annoying
 };
     
     const shareBtn = document.createElement('button');
