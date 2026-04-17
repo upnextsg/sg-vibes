@@ -299,17 +299,6 @@ function renderCard(item, category) {
         }
     }, 1200);
 };
-
-    showHeroOverlay();
-
-    // 🔥 Open immediately (safe for iOS)
-    const newTab = window.open(targetUrl, '_blank');
-
-    // Fallback if blocked
-    if (!newTab) {
-        window.location.href = targetUrl;
-    }
-};
     
     const shareBtn = document.createElement('button');
     shareBtn.className = "btn-link btn-share-secondary";
