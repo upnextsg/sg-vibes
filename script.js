@@ -154,6 +154,9 @@ function fallbackLocation(resolve, reason) {
         if (isInstagramBrowser()) message += `<br>👉 Tap <b>•••/⋮</b> → <b>Open in Browser</b>`;
         else {message += `👉 For better accuracy, turn on location and refresh.`;}
         alertBox.innerHTML = message;
+        setTimeout(() => {
+        alertBox.classList.add("hidden");
+    }, 5000);
     }
     state.userLoc = SG_CENTER;
     state.locationStatus = 'resolved';
