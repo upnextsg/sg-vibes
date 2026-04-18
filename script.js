@@ -300,7 +300,7 @@ function renderCard(item, category) {
     // ✅ Then navigate in SAME TAB
     setTimeout(() => {
         window.location.href = targetUrl;
-    }, 1400); // 1.2s = visible but not annoying
+    }, 1600); // 1.2s = visible but not annoying
 };
     
     const shareBtn = document.createElement('button');
