@@ -225,14 +225,10 @@ async function handleAction(category) {
             selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
             
             // mark interaction once
-        if (!state.hasUserInteracted) {
-            state.hasUserInteracted = true;
+       // ONLY scroll if user actually clicked (not auto load)
+        if (state.hasUserInteracted === true) {
+            scrollToResults();
         }
-
-        // SINGLE scroll point (only place scroll happens)
-        if (state.hasUserInteracted) {
-        scrollToResults();
-}
         }
     } catch (err) {
         console.error("Action Error:", err);
