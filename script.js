@@ -360,28 +360,16 @@ function renderCard(item, category) {
     const footer = card.querySelector('.card-footer');
    let targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : mapsUrl;
 
-    // normalize
     if (typeof targetUrl !== "string") targetUrl = "#";
     targetUrl = targetUrl.trim();
     
-    // strict allowlist
-    const isValid =
-        targetUrl === "#" ||
-        (targetUrl.startsWith("https://") || targetUrl.startsWith("http://"));
-    
-    if (!isValid) targetUrl = "#";
-
-    // allow only safe URLs OR fallback
-    if (!targetUrl || typeof targetUrl !== "string") {
+    // ONLY allow HTTPS links
+    if (targetUrl !== "#" && !targetUrl.startsWith("https://")) {
         targetUrl = "#";
     }
     
-    // block dangerous schemes
-    if (
-        targetUrl !== "#" &&
-        !targetUrl.startsWith("https://") &&
-        !targetUrl.startsWith("http://")
-    ) {
+    // final safety check
+    if (!isSafeUrl(targetUrl)) {
         targetUrl = "#";
     }
     
