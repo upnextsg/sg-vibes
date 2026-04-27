@@ -6,6 +6,15 @@ const CONFIG = {
     }
 };
 
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 let state = { 
     userLoc: null, 
     currentCategory: null, 
@@ -273,13 +282,13 @@ function renderCard(item, category) {
     card.innerHTML = `
         <div class="img-container">
             <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" 
-                 class="card-img" alt="${name}" loading="lazy">
-            <span class="dist-tag">${distText}</span>
+                 class="card-img" alt="${escapeHTML(name)}" loading="lazy">
+            <span class="dist-tag">${escapeHTML(distText)}</span>
         </div>
         <div class="card-content">
-            <span class="category-tag">${type || category}</span>
-            <h3>${name || "Local Spot"}</h3>
-            <p>${desc || "Tap below for details"}</p>
+            <span class="category-tag">${escapeHTML(type || category)}</span>
+            <h3>${escapeHTML(name || "Local Spot")}</h3>
+            <p>${escapeHTML(desc || "Tap below for details")}</p>
             <div class="card-footer" style="display:flex; gap:8px; margin-top:auto;"></div>
         </div>`;
 
