@@ -347,7 +347,7 @@ function renderCard(item, category) {
     card.innerHTML = `
     <div class="img-container">
         <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" 
-             class="card-img" alt="${escapeHTML(name)}" loading="lazy">
+             class="card-img" alt="${escapeHTML(name || "image")}" loading="lazy">
         <span class="dist-tag">${escapeHTML(distText)}</span>
     </div>
     <div class="card-content">
@@ -358,7 +358,18 @@ function renderCard(item, category) {
     </div>`;
 
     const footer = card.querySelector('.card-footer');
-    let targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : mapsUrl;
+   let targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : mapsUrl;
+
+    // normalize
+    if (typeof targetUrl !== "string") targetUrl = "#";
+    targetUrl = targetUrl.trim();
+    
+    // strict allowlist
+    const isValid =
+        targetUrl === "#" ||
+        (targetUrl.startsWith("https://") || targetUrl.startsWith("http://"));
+    
+    if (!isValid) targetUrl = "#";
 
     // allow only safe URLs OR fallback
     if (!targetUrl || typeof targetUrl !== "string") {
@@ -408,8 +419,14 @@ function renderCard(item, category) {
     shareBtn.style.fontWeight = "700";
     shareBtn.innerHTML = "🔗 Share";
     shareBtn.onclick = (e) => {
-        e.stopPropagation();
-        shareSpot(name, targetUrl);
+    e.stopPropagation();
+
+    if (!targetUrl || targetUrl === "#") {
+        alert("Nothing safe to share.");
+        return;
+    }
+
+    shareSpot(name, targetUrl);
     };
     
     footer.appendChild(mainBtn);
