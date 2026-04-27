@@ -207,9 +207,18 @@ async function handleAction(category) {
 
         if (text) {
             state.currentCategory = category;
-            state.dataCache = text.split("\n").slice(1)
-                .map((row, index) => ({ id: index, cols: secureParseCSV(row.trim()) }))
-                .filter(item => item.cols.length >= 5);
+            state.dataCache = text
+            .split("\n")
+            .slice(1)
+            .map((row, index) => {
+                if (!row || !row.trim()) return null;
+        
+                const cols = secureParseCSV(row.trim());
+                if (!cols || cols.length < 4) return null;
+        
+                return { id: index, cols };
+            })
+            .filter(Boolean);
             state.pointers[category] = 0; 
         }
 
@@ -241,7 +250,14 @@ async function handleAction(category) {
                 </div>`;
         } else {
             resultsDiv.innerHTML = "";
-            selection.forEach(item => resultsDiv.appendChild(renderCard(item, category)));
+            selection.forEach(item => {
+            try {
+                const card = renderCard(item, category);
+                if (card) resultsDiv.appendChild(card);
+            } catch (err) {
+                console.error("Card failed:", item, err);
+            }
+        });
             
             // mark interaction once
        // ONLY scroll if user actually clicked (not auto load)
@@ -260,7 +276,16 @@ async function handleAction(category) {
 // --- RENDERING LOGIC ---
 
 function renderCard(item, category) {
-    const [name, type, lat, lng, desc, musicUrl, mapsUrl] = item.cols;
+    if (!item || !item.cols) return document.createElement("div");
+    const cols = item.cols || [];
+
+    const name = cols[0] || "Local Spot";
+    const type = cols[1] || category;
+    const lat = cols[2];
+    const lng = cols[3];
+    const desc = cols[4] || "Tap below for details";
+    const musicUrl = cols[5];
+    const mapsUrl = cols[6];
     const activeCat = category.toLowerCase().trim();
 
     // RESTORED: Your original rotating image arrays
