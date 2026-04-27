@@ -29,6 +29,20 @@ let state = {
 
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
+function isSafeUrl(url) {
+    try {
+        if (!url || typeof url !== "string") return false;
+
+        const parsed = new URL(url);
+
+        // ONLY allow HTTPS links
+        if (parsed.protocol !== "https:") return false;
+
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
 // --- UI ENHANCEMENTS ---
 
 function toggleLoader(show) {
@@ -201,8 +215,25 @@ async function handleAction(category) {
         const [userCoords, text] = await Promise.all([
             getLocation(),
             state.currentCategory !== category 
-                ? fetch(CONFIG.sheets[category]).then(r => r.text()) 
-                : Promise.resolve(null)
+    ? fetch(CONFIG.sheets[category], {
+        method: "GET",
+        headers: {
+            "Accept": "text/plain"
+        }
+    })
+    .then(async (r) => {
+        if (!r.ok) throw new Error("Sheet fetch failed");
+
+        const text = await r.text();
+
+        // basic validation guard (no logic change)
+        if (!text || typeof text !== "string" || text.length < 10) {
+            throw new Error("Invalid sheet response");
+        }
+
+        return text;
+    })
+    : Promise.resolve(null)
         ]);
 
         if (text) {
