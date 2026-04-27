@@ -279,18 +279,45 @@ function renderCard(item, category) {
     
     const distText = item.dist ? `${item.dist.toFixed(1)}km away` : "Discover local";
 
-    card.innerHTML = `
-        <div class="img-container">
-            <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" 
-                 class="card-img" alt="${escapeHTML(name)}" loading="lazy">
-            <span class="dist-tag">${escapeHTML(distText)}</span>
-        </div>
-        <div class="card-content">
-            <span class="category-tag">${escapeHTML(type || category)}</span>
-            <h3>${escapeHTML(name || "Local Spot")}</h3>
-            <p>${escapeHTML(desc || "Tap below for details")}</p>
-            <div class="card-footer" style="display:flex; gap:8px; margin-top:auto;"></div>
-        </div>`;
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "img-container";
+    
+    const img = document.createElement("img");
+    img.className = "card-img";
+    img.src = `https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60`;
+    img.alt = name || "Local Spot";
+    img.loading = "lazy";
+    
+    const distTag = document.createElement("span");
+    distTag.className = "dist-tag";
+    distTag.textContent = distText;
+    
+    imgContainer.appendChild(img);
+    imgContainer.appendChild(distTag);
+    
+    const content = document.createElement("div");
+    content.className = "card-content";
+    
+    const tag = document.createElement("span");
+    tag.className = "category-tag";
+    tag.textContent = type || category;
+    
+    const title = document.createElement("h3");
+    title.textContent = name || "Local Spot";
+    
+    const descEl = document.createElement("p");
+    descEl.textContent = desc || "Tap below for details";
+    
+    const footer = document.createElement("div");
+    footer.className = "card-footer";
+    
+    content.appendChild(tag);
+    content.appendChild(title);
+    content.appendChild(descEl);
+    content.appendChild(footer);
+    
+    card.appendChild(imgContainer);
+    card.appendChild(content);
 
     const footer = card.querySelector('.card-footer');
     const targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
