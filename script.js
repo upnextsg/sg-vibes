@@ -242,14 +242,23 @@ async function handleAction(category) {
             .split("\n")
             .slice(1)
             .map((row, index) => {
-                if (!row || !row.trim()) return null;
+            if (!row || typeof row !== "string") return null;
         
-                const cols = secureParseCSV(row.trim());
-                if (!cols || cols.length < 4) return null;
+            const trimmed = row.trim();
+            if (!trimmed) return null;
         
-                return { id: index, cols };
-            })
-            .filter(Boolean);
+            const cols = secureParseCSV(trimmed);
+        
+            // HARD GUARD: reject malformed rows
+            if (!Array.isArray(cols)) return null;
+            if (cols.length < 5) return null;
+        
+            // prevent injection-heavy rows (extra safety, non-breaking)
+            if (cols.some(c => typeof c !== "string")) return null;
+        
+            return { id: index, cols };
+        })
+        .filter(Boolean);
             state.pointers[category] = 0; 
         }
 
@@ -349,7 +358,21 @@ function renderCard(item, category) {
     </div>`;
 
     const footer = card.querySelector('.card-footer');
-    const targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : (mapsUrl || "#");
+    let targetUrl = (activeCat === 'music' && musicUrl) ? musicUrl : mapsUrl;
+
+    // allow only safe URLs OR fallback
+    if (!targetUrl || typeof targetUrl !== "string") {
+        targetUrl = "#";
+    }
+    
+    // block dangerous schemes
+    if (
+        targetUrl !== "#" &&
+        !targetUrl.startsWith("https://") &&
+        !targetUrl.startsWith("http://")
+    ) {
+        targetUrl = "#";
+    }
     
     // Primary Action (Maps/Spotify)
     const mainBtn = document.createElement('button');
