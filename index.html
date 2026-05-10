@@ -26,6 +26,17 @@
     upgrade-insecure-requests;
     block-all-mixed-content;
     ">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy"
+    content="
+    geolocation=(self),
+    camera=(),
+    microphone=(),
+    payment=(),
+    usb=(),
+    accelerometer=(),
+    gyroscope=()
+    ">
 <body>
     <div class="background-animate" aria-hidden="true"></div>
 
@@ -77,7 +88,11 @@
         <footer>
             <p>© 2026 SG Vibes • Discovering the Red Dot</p>
             <div class="footer-legal">
-                <p>Visuals sourced from <a href="https://unsplash.com" target="_blank">Unsplash</a>. Business data is curated for informational use; please verify status locally.</p>
+                <p>Visuals sourced from <a href="https://unsplash.com"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                   Unsplash
+                </a>. Business data is curated for informational use; please verify status locally.</p>
             </div>
         </footer>
     </div>
