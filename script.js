@@ -29,17 +29,34 @@ let state = {
 
 const SG_CENTER = { lat: 1.3048, lng: 103.8318 };
 
+const ALLOWED_HOSTS = [
+    "google.com",
+    "www.google.com",
+    "maps.google.com",
+    "goo.gl",
+    "open.spotify.com"
+];
+
 function isSafeUrl(url) {
     try {
         if (!url || typeof url !== "string") return false;
 
+        // prevent extremely long malicious URLs
+        if (url.length > 2048) return false;
+
         const parsed = new URL(url);
 
-        // ONLY allow HTTPS links
-        if (!["https:"].includes(parsed.protocol)) return false;
+        // HTTPS only
+        if (parsed.protocol !== "https:") return false;
 
-        return true;
-    } catch (e) {
+        const hostname = parsed.hostname.toLowerCase();
+
+        // allowlist check
+        return ALLOWED_HOSTS.some(host =>
+            hostname === host || hostname.endsWith("." + host)
+        );
+
+    } catch {
         return false;
     }
 }
@@ -221,7 +238,8 @@ async function handleAction(category) {
         credentials: "omit",
         cache: "no-store",
         headers: {
-            "Accept": "text/plain"
+            "Accept": "text/plain",
+            "X-Content-Type-Options": "nosniff"
         }
     })
     .then(async (r) => {
@@ -254,7 +272,7 @@ async function handleAction(category) {
         
             const trimmed = row.trim();
             if (!trimmed) return null;
-        
+            if (trimmed.length > 5000) return null;    
             const cols = secureParseCSV(trimmed);
         
             // HARD GUARD: reject malformed rows
