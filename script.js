@@ -265,7 +265,7 @@ async function handleAction(category) {
         if (text) {
             state.currentCategory = category;
             state.dataCache = text
-            .split("\n")
+            .split(/\r?\n/)
             .slice(1)
             .map((row, index) => {
             if (!row || typeof row !== "string") return null;
@@ -360,12 +360,28 @@ async function handleAction(category) {
         }
         }
     } catch (err) {
-        console.error("Action Error:", err);
+    console.error("Action Error:", err);
+
+    const resultsDiv = document.getElementById("results");
+
+    resultsDiv.innerHTML = `
+        <div style="
+            grid-column:1/-1;
+            background:white;
+            color:black;
+            padding:20px;
+            border-radius:16px;
+            text-align:center;
+        ">
+            <h3>Unable to load results</h3>
+            <p>${escapeHTML(err.message)}</p>
+        </div>
+    `;
     } finally {
-        state.isLocating = false;
-        toggleLoader(false);
+            state.isLocating = false;
+            toggleLoader(false);
+        }
     }
-}
 
 // --- RENDERING LOGIC ---
 
@@ -396,7 +412,10 @@ function renderCard(item, category) {
     const card = document.createElement("div");
     card.className = "card";
     
-    const distText = item.dist ? `${item.dist.toFixed(1)}km away` : "Discover local";
+    const distText =
+    typeof item.dist === "number"
+        ? `${item.dist.toFixed(1)}km away`
+        : "Discover local";
 
     card.innerHTML = `
     <div class="img-container">
