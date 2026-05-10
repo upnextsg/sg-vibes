@@ -36,7 +36,7 @@ function isSafeUrl(url) {
         const parsed = new URL(url);
 
         // ONLY allow HTTPS links
-        if (parsed.protocol !== "https:") return false;
+        if (!["https:"].includes(parsed.protocol)) return false;
 
         return true;
     } catch (e) {
@@ -217,6 +217,9 @@ async function handleAction(category) {
             state.currentCategory !== category 
     ? fetch(CONFIG.sheets[category], {
         method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store",
         headers: {
             "Accept": "text/plain"
         }
@@ -227,7 +230,12 @@ async function handleAction(category) {
         const text = await r.text();
 
         // basic validation guard (no logic change)
-        if (!text || typeof text !== "string" || text.length < 10) {
+        if (
+        !text ||
+        typeof text !== "string" ||
+        text.length < 10 ||
+        text.length > 500000
+        ) {
             throw new Error("Invalid sheet response");
         }
 
@@ -395,7 +403,7 @@ function renderCard(item, category) {
 
     // ✅ Then navigate in SAME TAB
     setTimeout(() => {
-        window.location.href = targetUrl;
+        window.location.assign(targetUrl);
     }, 1600); // 1.2s = visible but not annoying
 };
     
@@ -471,6 +479,8 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 }
 
+    window.addEventListener('touchstart', () => {}, { passive: true });
+    
     if (overlay) {
         overlay.classList.remove('hidden');
 
