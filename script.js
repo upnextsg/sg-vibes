@@ -214,7 +214,6 @@ function fallbackLocation(resolve, reason) {
 }
 
 // --- MAIN ACTION HANDLER ---
-console.log("handleAction fired:", category);
 async function handleAction(category) {
     console.log("handleAction fired:", category);
     if (state.isLocating) return; 
