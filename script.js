@@ -20,6 +20,7 @@ let state = {
     currentCategory: null, 
     dataCache: [],
     pointers: { food: 0, store: 0, music: 0 },
+    carouselOffset: { food: 0, store: 0, music: 0 },
     isLocating: false,
     locationStatus: 'idle',
     appPhase: 'BOOT',
@@ -226,15 +227,21 @@ async function handleAction(category) {
 
     toggleLoader(true);
 
+    const isNewCategory = state.currentCategory !== category;
+    state.currentCategory = category;
+    if (isNewCategory) {
+    state.carouselOffset[category] = 0;
+    }
+    
     try {
         state.isLocating = true;
-
+    
         const [userCoords, text] = await Promise.all([
             getLocation(),
-            state.currentCategory !== category 
-    ? fetch(CONFIG.sheets[category], {
-    cache: "no-store"
-    })
+            isNewCategory
+            ? fetch(CONFIG.sheets[category], {
+                cache: "no-store"
+        })
     .then(async (r) => {
         if (!r.ok) throw new Error("Sheet fetch failed");
 
@@ -307,14 +314,16 @@ async function handleAction(category) {
                 );
             });
         }
-                   if (state.pointers[category] === 0) {
+                   if (state.currentCategory === category) {
             state.dataCache.sort((a, b) => a.dist - b.dist);
         }
 
         console.log("FINAL CACHE:", state.dataCache);
+        const offset = state.carouselOffset[category] || 0;
+
         let selection = state.dataCache.slice(
-            state.pointers[category],
-            state.pointers[category] + 2
+            offset,
+            offset + 2
         );
 
         // fallback if slice is empty but data exists
@@ -326,8 +335,6 @@ async function handleAction(category) {
         if (selection.length === 1 && state.dataCache.length > 1) {
              selection.push(state.dataCache[0]); 
         }
-
-        state.pointers[category] += 2;
 
        if (selection.length === 0) {
 
@@ -499,6 +506,39 @@ function renderCard(item, category) {
     return card;
 }
 
+function renderCarousel(category) {
+    const resultsDiv = document.getElementById("results");
+
+    const offset = state.carouselOffset[category] || 0;
+
+    const max = state.dataCache.length;
+
+    let selection = [];
+    
+    for (let i = 0; i < 2; i++) {
+        const index = (offset + i) % max;
+        if (state.dataCache[index]) {
+            selection.push(state.dataCache[index]);
+        }
+    }
+
+    // wrap safety (same logic you already had)
+    if (selection.length === 1 && state.dataCache.length > 1) {
+        selection.push(state.dataCache[0]);
+    }
+
+    resultsDiv.innerHTML = "";
+
+    selection.forEach(item => {
+        try {
+            const card = renderCard(item, category);
+            if (card) resultsDiv.appendChild(card);
+        } catch (err) {
+            console.error("Card failed:", err);
+        }
+    });
+}
+
 function resetList(cat) {
     state.pointers[cat] = 0;
     handleAction(cat);
@@ -533,6 +573,39 @@ window.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('app-share-fab')
     ?.addEventListener('click', shareApp);
+
+        let touchStartX = 0;
+    
+    const resultsDiv = document.getElementById("results");
+    
+    resultsDiv.addEventListener("touchstart", (e) => {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    
+    resultsDiv.addEventListener("touchend", (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+    
+        const threshold = 50;
+        const cat = state.currentCategory;
+        if (!cat) return;
+    
+        if (dx > threshold) {
+            moveCarousel(cat, -1);
+        } else if (dx < -threshold) {
+            moveCarousel(cat, 1);
+        }
+    });
+
+    resultsDiv.addEventListener("wheel", (e) => {
+    const cat = state.currentCategory;
+    if (!cat) return;
+
+    if (e.deltaY > 0) {
+        moveCarousel(cat, 1);
+    } else {
+        moveCarousel(cat, -1);
+    }
+    });
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
 
@@ -545,6 +618,7 @@ window.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(() => {
         handleAction('food');
     });
+        
 }
 
     window.addEventListener('touchstart', () => {}, { passive: true });
@@ -568,3 +642,23 @@ window.addEventListener('DOMContentLoaded', () => {
         startApp();
     }
 });
+
+function moveCarousel(category, direction) {
+    if (!category) return; // IMPORTANT GUARD
+
+    const max = state.dataCache.length;
+    if (max <= 2) return;
+
+    let offset = state.carouselOffset[category] ?? 0;
+
+    offset = offset + direction;
+
+    const maxOffset = Math.max(0, max - 2);
+
+    if (offset < 0) offset = 0;
+    if (offset > maxOffset) offset = maxOffset;
+
+    state.carouselOffset[category] = offset;
+
+    renderCarousel(category);
+}
