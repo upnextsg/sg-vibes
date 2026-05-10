@@ -15,7 +15,12 @@
     content="
     default-src 'self';
     script-src 'self';
-    connect-src 'self' https://docs.google.com https://docs.googleusercontent.com https://*.googleusercontent.com;
+    connect-src 'self'
+    https://docs.google.com
+    https://docs.googleusercontent.com
+    https://*.googleusercontent.com
+    https://*.google.com
+    https://*.gstatic.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' data: https://images.unsplash.com https://upload.wikimedia.org;
@@ -38,6 +43,7 @@
     accelerometer=(),
     gyroscope=()
     ">
+    </head>
 <body>
     <div class="background-animate" aria-hidden="true"></div>
 
