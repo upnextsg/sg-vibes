@@ -233,15 +233,14 @@ async function handleAction(category) {
             getLocation(),
             state.currentCategory !== category 
     ? fetch(CONFIG.sheets[category], {
-        method: "GET",
-        mode: "cors",
-        credentials: "omit",
-        cache: "no-store",
-        headers: {
-            "Accept": "text/plain",
-            "X-Content-Type-Options": "nosniff"
+    method: "GET",
+    mode: "cors",
+    credentials: "omit",
+    cache: "no-store",
+    headers: {
+        "Accept": "text/plain"
         }
-    })
+        })
     .then(async (r) => {
         if (!r.ok) throw new Error("Sheet fetch failed");
 
