@@ -315,10 +315,9 @@ async function handleAction(category) {
                 );
             });
         }
-            if (state.pointers[category] === 0) {
-                state.dataCache.sort((a, b) => a.dist - b.dist);
-            }
-    }
+                   if (state.pointers[category] === 0) {
+            state.dataCache.sort((a, b) => a.dist - b.dist);
+        }
 
         console.log("FINAL CACHE:", state.dataCache);
         let selection = state.dataCache.slice(
