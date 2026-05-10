@@ -274,12 +274,13 @@ async function handleAction(category) {
             if (!trimmed) return null;
             if (trimmed.length > 5000) return null;    
             const cols = secureParseCSV(trimmed);
+            console.log("PARSED COLS:", cols);
         
             // HARD GUARD: reject malformed rows
             if (!Array.isArray(cols)) return null;
 
             // allow missing optional columns instead of rejecting row
-            if (cols.length < 2) return null;
+            if (!cols[0] || cols[0].trim() === "") return null;
         
             // prevent injection-heavy rows (extra safety, non-breaking)
             if (cols.some(c => typeof c !== "string")) return null;
@@ -318,6 +319,7 @@ async function handleAction(category) {
             }
         }
 
+        console.log("FINAL CACHE:", state.dataCache);
         let selection = state.dataCache.slice(
             state.pointers[category],
             state.pointers[category] + 2
@@ -335,13 +337,22 @@ async function handleAction(category) {
 
         state.pointers[category] += 2;
 
-        if (selection.length === 0 && state.dataCache.length > 0) {
+       if (selection.length === 0) {
+
             resultsDiv.innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;padding:40px;">
-                    <button onclick="resetList('${category}')" class="category-btn active" style="margin: 0 auto; width: auto; padding: 12px 24px;">
-                        🔄 Start Over
-                    </button>
-                </div>`;
+                <div style="
+                    grid-column:1/-1;
+                    background:white;
+                    color:black;
+                    padding:20px;
+                    border-radius:16px;
+                    text-align:center;
+                ">
+                    <h3>No results available</h3>
+                    <p>CSV loaded but no valid rows were parsed.</p>
+                </div>
+            `;
+        
         } else {
             resultsDiv.innerHTML = "";
             selection.forEach(item => {
