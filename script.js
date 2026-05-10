@@ -445,6 +445,18 @@ function shareApp() {
 // --- INITIALIZATION ---
 
 window.addEventListener('DOMContentLoaded', () => {
+
+    document.getElementById('foodBtn')
+    ?.addEventListener('click', () => handleUserClick('food'));
+    
+    document.getElementById('storeBtn')
+    ?.addEventListener('click', () => handleUserClick('store'));
+    
+    document.getElementById('musicBtn')
+    ?.addEventListener('click', () => handleUserClick('music'));
+    
+    document.getElementById('app-share-fab')
+    ?.addEventListener('click', shareApp);
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
 
