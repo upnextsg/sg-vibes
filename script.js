@@ -277,7 +277,7 @@ async function handleAction(category) {
         
             // HARD GUARD: reject malformed rows
             if (!Array.isArray(cols)) return null;
-            if (cols.length < 5) return null;
+            if (cols.length < 4) return null;
         
             // prevent injection-heavy rows (extra safety, non-breaking)
             if (cols.some(c => typeof c !== "string")) return null;
@@ -286,6 +286,9 @@ async function handleAction(category) {
         })
         .filter(Boolean);
             state.pointers[category] = 0; 
+        }
+        if (state.dataCache.length === 0) {
+        console.warn("No valid rows parsed from CSV. Check column format.");
         }
 
         if (category !== 'music') {
@@ -299,7 +302,16 @@ async function handleAction(category) {
             }
         }
 
-        let selection = state.dataCache.slice(state.pointers[category], state.pointers[category] + 2);
+        let selection = state.dataCache.slice(
+            state.pointers[category],
+            state.pointers[category] + 2
+        );
+
+        // fallback if slice is empty but data exists
+        if (selection.length === 0 && state.dataCache.length > 0) {
+            selection = state.dataCache.slice(0, 2);
+            state.pointers[category] = 2;
+        }
         
         if (selection.length === 1 && state.dataCache.length > 1) {
              selection.push(state.dataCache[0]); 
