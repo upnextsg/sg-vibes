@@ -277,7 +277,9 @@ async function handleAction(category) {
         
             // HARD GUARD: reject malformed rows
             if (!Array.isArray(cols)) return null;
-            if (cols.length < 4) return null;
+
+            // allow missing optional columns instead of rejecting row
+            if (cols.length < 2) return null;
         
             // prevent injection-heavy rows (extra safety, non-breaking)
             if (cols.some(c => typeof c !== "string")) return null;
@@ -287,6 +289,8 @@ async function handleAction(category) {
         .filter(Boolean);
             state.pointers[category] = 0; 
         }
+        console.log("VALID ROWS:", state.dataCache.length);
+        console.log("DATA SAMPLE:", state.dataCache.slice(0, 2));
         if (state.dataCache.length === 0) {
         console.warn("No valid rows parsed from CSV. Check column format.");
         }
@@ -295,8 +299,20 @@ async function handleAction(category) {
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
                 const lng = parseFloat(item.cols[3]);
-                item.dist = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
+        
+                if (isNaN(lat) || isNaN(lng)) {
+                    item.dist = 999; // push bad rows to bottom
+                    return;
+                }
+        
+                item.dist = calculateDistance(
+                    userCoords.lat,
+                    userCoords.lng,
+                    lat,
+                    lng
+                );
             });
+        }
             if (state.pointers[category] === 0) {
                 state.dataCache.sort((a, b) => a.dist - b.dist);
             }
