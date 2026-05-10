@@ -11,8 +11,21 @@
     
     <link rel="stylesheet" href="style.css">
     <meta name="google-site-verification" content="QPJ7g1jn11zkz6C2rH_MmwZG72IMl7YsLNDlod2_L50" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://*.googleapis.com; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https: fonts.googleapis.com; font-src 'self' https: fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com https://upload.wikimedia.org https://*.unsplash.com;">
-</head>
+    <meta http-equiv="Content-Security-Policy"
+    content="
+    default-src 'self';
+    script-src 'self';
+    connect-src 'self' https://docs.google.com https://docs.googleusercontent.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: https://images.unsplash.com https://upload.wikimedia.org;
+    base-uri 'self';
+    form-action 'self';
+    object-src 'none';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+    block-all-mixed-content;
+    ">
 <body>
     <div class="background-animate" aria-hidden="true"></div>
 
@@ -47,13 +60,13 @@
         <div id="distance-alert" class="hidden alert-warning"></div>
         
         <nav class="button-group">
-            <button id="foodBtn" class="category-btn" onclick="handleUserClick('food')">
+            <button id="foodBtn" class="category-btn">
                 <span class="icon">🍜</span> Food
             </button>
-            <button id="storeBtn" class="category-btn" onclick="handleUserClick('store')">
+            <button id="storeBtn" class="category-btn">
                 <span class="icon">🏪</span> Stores
             </button>
-            <button id="musicBtn" class="category-btn" onclick="handleUserClick('music')">
+            <button id="musicBtn" class="category-btn">
                 <span class="icon">🎵</span> Music
             </button>
         </nav>
@@ -97,7 +110,7 @@
         <span class="toast-text">Good choice! You're supporting a local SG business/musician today.</span>
     </div>
     
-    <button id="app-share-fab" class="fab-share" onclick="shareApp()">
+    <button id="app-share-fab" class="fab-share">
     <span>Share App</span>
     </button>
     
