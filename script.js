@@ -461,34 +461,40 @@ window.addEventListener('DOMContentLoaded', () => {
     
     const resultsDiv = document.getElementById("results");
     
+    const resultsDiv = document.getElementById("results");
+    let touchStartX = 0;
+    let isSwiping = false; // "Governor" to prevent over-swiping
+
+    // Mobile Swipe: Start
     resultsDiv.addEventListener("touchstart", (e) => {
         touchStartX = e.touches[0].clientX;
+        isSwiping = false; 
+    }, { passive: true });
+
+    // Mobile Swipe: End
+    resultsDiv.addEventListener("touchend", (e) => {
+        if (isSwiping) return; // Ignore if a swipe is already in progress
+        
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const threshold = 70; // Increased threshold for intentional movement
+        const cat = state.currentCategory;
+        
+        if (!cat) return;
+
+        if (Math.abs(dx) > threshold) {
+            isSwiping = true; // Lock swiping briefly
+            
+            if (dx > 0) {
+                moveCarousel(cat, -1); // Swipe Right -> Show Previous (closer)
+            } else {
+                moveCarousel(cat, 1);  // Swipe Left -> Show Next (further)
+            }
+            
+            // Re-enable swiping after 400ms (Smooth UI speed)
+            setTimeout(() => { isSwiping = false; }, 400);
+        }
     }, { passive: true });
     
-    resultsDiv.addEventListener("touchend", (e) => {
-        const dx = e.changedTouches[0].clientX - touchStartX;
-    
-        const threshold = 50;
-        const cat = state.currentCategory;
-        if (!cat) return;
-    
-        if (dx > threshold) {
-            moveCarousel(cat, -1);
-        } else if (dx < -threshold) {
-            moveCarousel(cat, 1);
-        }
-    });
-
-    resultsDiv.addEventListener("wheel", (e) => {
-    const cat = state.currentCategory;
-    if (!cat) return;
-
-    if (e.deltaY > 0) {
-        moveCarousel(cat, 1);
-    } else {
-        moveCarousel(cat, -1);
-    }
-    });
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
 
@@ -527,21 +533,21 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function moveCarousel(category, direction) {
-    if (!category || !state.dataCache.length) return;
+    if (!category || !state.dataCache || state.dataCache.length === 0) return;
 
     const max = state.dataCache.length;
     let currentOffset = state.carouselOffset[category] || 0;
 
-    // direction 1 = forward, -1 = backward
+    // Move by exactly 1 item per click/swipe
     let newOffset = currentOffset + direction;
 
-    // CLAMP: Keep the offset between 0 and the last possible pair
+    // CLAMP: Do not go below 0, do not go past the last possible pair (max - 2)
     const maxPossibleOffset = Math.max(0, max - 2);
     
     if (newOffset < 0) newOffset = 0;
     if (newOffset > maxPossibleOffset) newOffset = maxPossibleOffset;
 
-    // Only update if the user actually moved to a new position
+    // Only render if a movement actually occurred
     if (newOffset !== currentOffset) {
         state.carouselOffset[category] = newOffset;
         renderCarousel(category);
