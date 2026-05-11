@@ -444,110 +444,69 @@ function shareApp() {
 // --- INITIALIZATION ---
 
 window.addEventListener('DOMContentLoaded', () => {
+    // 1. Setup Button Listeners
+    document.getElementById('foodBtn')?.addEventListener('click', () => handleUserClick('food'));
+    document.getElementById('storeBtn')?.addEventListener('click', () => handleUserClick('store'));
+    document.getElementById('musicBtn')?.addEventListener('click', () => handleUserClick('music'));
+    document.getElementById('app-share-fab')?.addEventListener('click', shareApp);
 
-    document.getElementById('foodBtn')
-    ?.addEventListener('click', () => handleUserClick('food'));
-    
-    document.getElementById('storeBtn')
-    ?.addEventListener('click', () => handleUserClick('store'));
-    
-    document.getElementById('musicBtn')
-    ?.addEventListener('click', () => handleUserClick('music'));
-    
-    document.getElementById('app-share-fab')
-    ?.addEventListener('click', shareApp);
-
-        let touchStartX = 0;
-    
-    const resultsDiv = document.getElementById("results");
-    
+    // 2. Setup Navigation Interactions (One declaration only)
     const resultsDiv = document.getElementById("results");
     let touchStartX = 0;
-    let isSwiping = false; // "Governor" to prevent over-swiping
+    let isSwiping = false; 
 
-    // Mobile Swipe: Start
-    resultsDiv.addEventListener("touchstart", (e) => {
-        touchStartX = e.touches[0].clientX;
-        isSwiping = false; 
-    }, { passive: true });
+    if (resultsDiv) {
+        resultsDiv.addEventListener("touchstart", (e) => {
+            touchStartX = e.touches[0].clientX;
+            isSwiping = false; 
+        }, { passive: true });
 
-    // Mobile Swipe: End
-    resultsDiv.addEventListener("touchend", (e) => {
-        if (isSwiping) return; // Ignore if a swipe is already in progress
-        
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const threshold = 70; // Increased threshold for intentional movement
-        const cat = state.currentCategory;
-        
-        if (!cat) return;
+        resultsDiv.addEventListener("touchend", (e) => {
+            if (isSwiping) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const threshold = 70;
+            const cat = state.currentCategory;
+            if (!cat || Math.abs(dx) < threshold) return;
 
-        if (Math.abs(dx) > threshold) {
-            isSwiping = true; // Lock swiping briefly
-            
-            if (dx > 0) {
-                moveCarousel(cat, -1); // Swipe Right -> Show Previous (closer)
-            } else {
-                moveCarousel(cat, 1);  // Swipe Left -> Show Next (further)
-            }
-            
-            // Re-enable swiping after 400ms (Smooth UI speed)
+            isSwiping = true;
+            moveCarousel(cat, dx > 0 ? -1 : 1);
             setTimeout(() => { isSwiping = false; }, 400);
-        }
-    }, { passive: true });
+        }, { passive: true });
+    }
     
+    // 3. Tutorial & Start Logic
     const overlay = document.getElementById('tutorial-overlay');
     const closeBtn = document.getElementById('close-tutorial');
-
     let hasStarted = false;
 
     function startApp() {
-    if (hasStarted) return;
-    hasStarted = true;
+        if (hasStarted) return;
+        hasStarted = true;
+        handleUserClick('food'); // This triggers location and loads first items
+    }
 
-    requestAnimationFrame(() => {
-        handleAction('food');
-    });
-        
-}
-
-    window.addEventListener('touchstart', () => {}, { passive: true });
-    
     if (overlay) {
         overlay.classList.remove('hidden');
-
         closeBtn?.addEventListener('click', () => {
-        overlay.classList.add('hidden');
-        state.appPhase = 'READY';
-        state.hasInitialScrollDone = true;
-        startApp();
-    });
-
-        // 🔥 FAILSAFE: if anything breaks, auto-start after 1.5s
-        setTimeout(() => {
-            state.appPhase = 'READY';
+            overlay.classList.add('hidden');
             startApp();
-        }, 1500);
+        });
+        // Failsafe start
+        setTimeout(startApp, 2000);
     } else {
         startApp();
     }
 });
 
+// Keep moveCarousel at the very bottom, outside the DOMContentLoaded block
 function moveCarousel(category, direction) {
     if (!category || !state.dataCache || state.dataCache.length === 0) return;
-
     const max = state.dataCache.length;
     let currentOffset = state.carouselOffset[category] || 0;
-
-    // Move by exactly 1 item per click/swipe
     let newOffset = currentOffset + direction;
-
-    // CLAMP: Do not go below 0, do not go past the last possible pair (max - 2)
     const maxPossibleOffset = Math.max(0, max - 2);
-    
     if (newOffset < 0) newOffset = 0;
     if (newOffset > maxPossibleOffset) newOffset = maxPossibleOffset;
-
-    // Only render if a movement actually occurred
     if (newOffset !== currentOffset) {
         state.carouselOffset[category] = newOffset;
         renderCarousel(category);
