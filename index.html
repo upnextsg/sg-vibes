@@ -89,8 +89,18 @@
             </button>
         </nav>
 
-        <main id="results" class="results-grid">
-            </main>
+        <div id="carousel-wrapper" style="position: relative; display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 20px;">
+    
+        <!-- Left Arrow Button -->
+        <button id="prevBtn" class="nav-arrow hidden" onclick="moveCarousel(state.currentCategory, -1)" aria-label="Previous suggestions">❮</button>
+        
+        <!-- This is your original results main tag, now wrapped for the carousel -->
+        <main id="results" class="results-grid" style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 0; min-height: 350px;">
+        </main>
+    
+        <!-- Right Arrow Button -->
+        <button id="nextBtn" class="nav-arrow hidden" onclick="moveCarousel(state.currentCategory, 1)" aria-label="Next suggestions">❯</button>
+        </div>
 
         <footer>
             <p>© 2026 SG Vibes • Discovering the Red Dot</p>
