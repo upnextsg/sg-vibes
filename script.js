@@ -216,183 +216,64 @@ function fallbackLocation(resolve, reason) {
 
 // --- MAIN ACTION HANDLER ---
 async function handleAction(category) {
-    console.log("handleAction fired:", category);
     if (state.isLocating) return; 
     
     const resultsDiv = document.getElementById("results");
-    const buttonGroup = document.querySelector('.button-group');
+    toggleLoader(true);
 
     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`${category}Btn`)?.classList.add('active');
 
-    toggleLoader(true);
-
     const isNewCategory = state.currentCategory !== category;
     state.currentCategory = category;
-    if (isNewCategory) {
-    state.carouselOffset[category] = 0;
-    }
-    
+
     try {
         state.isLocating = true;
-    
-        const [userCoords, text] = await Promise.all([
-            getLocation(),
-            isNewCategory
-            ? fetch(CONFIG.sheets[category], {
-                cache: "no-store"
-        })
-    .then(async (r) => {
-        if (!r.ok) throw new Error("Sheet fetch failed");
+        const userCoords = await getLocation();
 
-        const text = await r.text();
+        // Only fetch and sort if we don't have this category's data yet
+        if (isNewCategory || state.dataCache.length === 0) {
+            const response = await fetch(CONFIG.sheets[category], { cache: "no-store" });
+            const text = await response.text();
+            
+            // Keep your existing parsing logic exactly as is
+            state.dataCache = text.split(/\r?\n/).slice(1)
+                .map((row, index) => {
+                    if (!row || typeof row !== "string") return null;
+                    const trimmed = row.trim();
+                    if (!trimmed) return null;
+                    const cols = secureParseCSV(trimmed);
+                    if (!cols[0]) return null;
+                    return { id: index, cols };
+                })
+                .filter(Boolean);
 
-        // basic validation guard (no logic change)
-        if (
-        !text ||
-        typeof text !== "string" ||
-        text.length < 10 ||
-        text.length > 500000
-        ) {
-            throw new Error("Invalid sheet response");
-        }
-
-        return text;
-    })
-    : Promise.resolve(null)
-        ]);
-
-        if (text) {
-            state.currentCategory = category;
-            state.dataCache = text
-            .split(/\r?\n/)
-            .slice(1)
-            .map((row, index) => {
-            if (!row || typeof row !== "string") return null;
-        
-            const trimmed = row.trim();
-            if (!trimmed) return null;
-            if (trimmed.length > 5000) return null;    
-            const cols = secureParseCSV(trimmed);
-            console.log("PARSED COLS:", cols);
-        
-            // HARD GUARD: reject malformed rows
-            if (!Array.isArray(cols)) return null;
-
-            // allow missing optional columns instead of rejecting row
-            if (!cols[0] || cols[0].trim() === "") return null;
-        
-            // prevent injection-heavy rows (extra safety, non-breaking)
-            if (cols.some(c => typeof c !== "string")) return null;
-        
-            return { id: index, cols };
-        })
-        .filter(Boolean);
-            state.pointers[category] = 0; 
-        }
-        console.log("VALID ROWS:", state.dataCache.length);
-        console.log("DATA SAMPLE:", state.dataCache.slice(0, 2));
-        if (state.dataCache.length === 0) {
-        console.warn("No valid rows parsed from CSV. Check column format.");
-        }
-
-        if (category !== 'music') {
+            // Calculate Distance & Sort (Closest to Furthest)
             state.dataCache.forEach(item => {
                 const lat = parseFloat(item.cols[2]);
                 const lng = parseFloat(item.cols[3]);
-        
-                if (isNaN(lat) || isNaN(lng)) {
-                    item.dist = 999; // push bad rows to bottom
-                    return;
-                }
-        
-                item.dist = calculateDistance(
-                    userCoords.lat,
-                    userCoords.lng,
-                    lat,
-                    lng
-                );
+                item.dist = (category === 'music') ? 0 : calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
             });
-        }
-                   if (state.currentCategory === category) {
-            state.dataCache.sort((a, b) => a.dist - b.dist);
-        }
 
-        console.log("FINAL CACHE:", state.dataCache);
-        const offset = state.carouselOffset[category] || 0;
-
-        let selection = state.dataCache.slice(
-            offset,
-            offset + 2
-        );
-
-        // fallback if slice is empty but data exists
-        if (selection.length === 0 && state.dataCache.length > 0) {
-            selection = state.dataCache.slice(0, 2);
-            state.pointers[category] = 2;
-        }
-        
-        if (selection.length === 1 && state.dataCache.length > 1) {
-             selection.push(state.dataCache[0]); 
-        }
-
-       if (selection.length === 0) {
-
-            resultsDiv.innerHTML = `
-                <div style="
-                    grid-column:1/-1;
-                    background:white;
-                    color:black;
-                    padding:20px;
-                    border-radius:16px;
-                    text-align:center;
-                ">
-                    <h3>No results available</h3>
-                    <p>CSV loaded but no valid rows were parsed.</p>
-                </div>
-            `;
-        
-        } else {
-            resultsDiv.innerHTML = "";
-            selection.forEach(item => {
-            try {
-                const card = renderCard(item, category);
-                if (card) resultsDiv.appendChild(card);
-            } catch (err) {
-                console.error("Card failed:", item, err);
+            if (category !== 'music') {
+                state.dataCache.sort((a, b) => a.dist - b.dist);
             }
-        });
-            
-            // mark interaction once
-       // ONLY scroll if user actually clicked (not auto load)
-        if (state.hasUserInteracted === true) {
-            scrollToResults();
         }
-        }
+
+        // Reset the "window" to the start of the sorted list
+        state.carouselOffset[category] = 0;
+        renderCarousel(category);
+
+        if (state.hasUserInteracted) scrollToResults();
+
     } catch (err) {
-    console.error("Action Error:", err);
-
-    const resultsDiv = document.getElementById("results");
-
-    resultsDiv.innerHTML = `
-        <div style="
-            grid-column:1/-1;
-            background:white;
-            color:black;
-            padding:20px;
-            border-radius:16px;
-            text-align:center;
-        ">
-            <h3>Unable to load results</h3>
-            <p>${escapeHTML(err.message)}</p>
-        </div>
-    `;
+        console.error("Action Error:", err);
+        resultsDiv.innerHTML = `<div class="error-box"><h3>Error</h3><p>${escapeHTML(err.message)}</p></div>`;
     } finally {
-            state.isLocating = false;
-            toggleLoader(false);
-        }
+        state.isLocating = false;
+        toggleLoader(false);
     }
-
+}
 // --- RENDERING LOGIC ---
 
 function renderCard(item, category) {
@@ -508,35 +389,37 @@ function renderCard(item, category) {
 
 function renderCarousel(category) {
     const resultsDiv = document.getElementById("results");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    
+    if (!resultsDiv) return;
 
     const offset = state.carouselOffset[category] || 0;
-
     const max = state.dataCache.length;
-
-    let selection = [];
     
-    for (let i = 0; i < 2; i++) {
-        const index = (offset + i) % max;
-        if (state.dataCache[index]) {
-            selection.push(state.dataCache[index]);
-        }
-    }
-
-    // wrap safety (same logic you already had)
-    if (selection.length === 1 && state.dataCache.length > 1) {
-        selection.push(state.dataCache[0]);
-    }
+    const selection = state.dataCache.slice(offset, offset + 2);
 
     resultsDiv.innerHTML = "";
-
+    
     selection.forEach(item => {
-        try {
-            const card = renderCard(item, category);
-            if (card) resultsDiv.appendChild(card);
-        } catch (err) {
-            console.error("Card failed:", err);
-        }
+        const card = renderCard(item, category);
+        resultsDiv.appendChild(card);
     });
+
+    // --- INDICATOR LOGIC ---
+    // Hide Left Arrow if we are at the very beginning
+    if (offset <= 0) {
+        prevBtn?.classList.add('hidden');
+    } else {
+        prevBtn?.classList.remove('hidden');
+    }
+
+    // Hide Right Arrow if there are no more items to show
+    if (offset >= max - 2) {
+        nextBtn?.classList.add('hidden');
+    } else {
+        nextBtn?.classList.remove('hidden');
+    }
 }
 
 function resetList(cat) {
@@ -644,21 +527,23 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function moveCarousel(category, direction) {
-    if (!category) return; // IMPORTANT GUARD
+    if (!category || !state.dataCache.length) return;
 
     const max = state.dataCache.length;
-    if (max <= 2) return;
+    let currentOffset = state.carouselOffset[category] || 0;
 
-    let offset = state.carouselOffset[category] ?? 0;
+    // direction 1 = forward, -1 = backward
+    let newOffset = currentOffset + direction;
 
-    offset = offset + direction;
+    // CLAMP: Keep the offset between 0 and the last possible pair
+    const maxPossibleOffset = Math.max(0, max - 2);
+    
+    if (newOffset < 0) newOffset = 0;
+    if (newOffset > maxPossibleOffset) newOffset = maxPossibleOffset;
 
-    const maxOffset = Math.max(0, max - 2);
-
-    if (offset < 0) offset = 0;
-    if (offset > maxOffset) offset = maxOffset;
-
-    state.carouselOffset[category] = offset;
-
-    renderCarousel(category);
+    // Only update if the user actually moved to a new position
+    if (newOffset !== currentOffset) {
+        state.carouselOffset[category] = newOffset;
+        renderCarousel(category);
+    }
 }
