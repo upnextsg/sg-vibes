@@ -429,7 +429,7 @@ footer p {
 @media (max-width: 500px) {
     .results-grid {
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* Force side-by-side */
+        grid-template-columns: 1fr !important; /* Force side-by-side */
         gap: 10px !important;
         padding: 5px !important;
     }
@@ -443,11 +443,11 @@ footer p {
 
     .img-container {
         width: 100% !important;
-        height: 110px !important;
+        height: 160px !important;
     }
 
     .card-content {
-        padding: 24px; 
+        padding: 14px !important; 
         display: flex;
         flex-direction: column;
         flex-grow: 1;
