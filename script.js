@@ -303,16 +303,27 @@ function renderCard(item, category) {
     const card = document.createElement("div");
     card.className = "card";
     
-    const distText =
-    typeof item.dist === "number"
-        ? `${item.dist.toFixed(1)}km away`
-        : "Discover local";
+    let distHTML = '';
+
+    if (activeCat !== 'music') {
+    
+        const distText =
+            typeof item.dist === "number"
+                ? `${item.dist.toFixed(1)}km away`
+                : "Discover local";
+    
+        distHTML = `
+            <span class="dist-tag">
+                ${escapeHTML(distText)}
+            </span>
+        `;
+    }
 
     card.innerHTML = `
     <div class="img-container">
         <img src="https://images.unsplash.com/photo-${imgId}?auto=format&fit=crop&w=600&q=60" 
              class="card-img" alt="${escapeHTML(name || "image")}" loading="lazy">
-        <span class="dist-tag">${escapeHTML(distText)}</span>
+        ${distHTML}
     </div>
     <div class="card-content">
         <span class="category-tag">${escapeHTML(type || category)}</span>
