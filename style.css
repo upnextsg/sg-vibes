@@ -429,7 +429,7 @@ footer p {
 @media (max-width: 500px) {
     .results-grid {
         display: grid !important;
-        grid-template-columns: 1fr !important; /* Force side-by-side */
+        grid-template-columns: 1fr 1fr !important; /* Force side-by-side */
         gap: 10px !important;
         padding: 5px !important;
     }
@@ -437,17 +437,17 @@ footer p {
     .card {
         flex-direction: column !important; /* Stacks image on top of text inside the half-width card */
         height: auto !important; 
-        min-height: 280px;
+        min-height: 220px;
         margin: 0 !important;
     }
 
     .img-container {
         width: 100% !important;
-        height: 160px !important;
+        height: 90px !important;
     }
 
     .card-content {
-        padding: 14px !important; 
+        padding: 10px !important;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
