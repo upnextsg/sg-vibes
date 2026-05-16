@@ -714,13 +714,13 @@ footer p {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* Cuts off extra cards on desktop horizontally */
+    overflow: hidden; /* Safely cuts off extra horizontal cards on desktop */
     padding: 15px 0;
 }
 
 /* Base styles default to Desktop view rules */
 .results-grid { 
-    display: flex !important; /* Overrides the grid rule above to prevent up-and-down stacking */
+    display: flex !important; /* Overrides the original grid rule to prevent up-and-down stacking */
     flex-direction: row !important;
     gap: 25px !important; 
     width: 100%;
@@ -729,7 +729,7 @@ footer p {
 
 @media (min-width: 501px) {
     .card {
-        flex: 0 0 calc(50% - 12.5px) !important; /* Locks desktop strictly to 2 items wide */
+        flex: 0 0 calc(50% - 12.5px) !important; /* Locks desktop strictly to 2 items wide per view */
     }
 }
 
@@ -737,25 +737,26 @@ footer p {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(10, 15, 30, 0.85); /* Darker glass tint so arrows read clearly over text/images */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     color: white;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    z-index: 100;
+    z-index: 100; /* Keeps arrows floating on top of the cards */
 }
 
-#prevBtn { left: -50px; }
-#nextBtn { right: -50px; }
+/* FIX: Placed arrows cleanly inside the container borders so 'overflow: hidden' doesn't hide them */
+#prevBtn { left: 10px; }
+#nextBtn { right: 10px; }
 
 .nav-arrow:active {
     transform: translateY(-50%) scale(0.9);
@@ -772,8 +773,8 @@ footer p {
 }
 
 @media (max-width: 900px) and (min-width: 501px) {
-    #prevBtn { left: -10px; }
-    #nextBtn { right: -10px; }
+    #prevBtn { left: 5px; }
+    #nextBtn { right: 5px; }
 }
 
 /* --- UNCHANGED Mobile Layout Block --- */
