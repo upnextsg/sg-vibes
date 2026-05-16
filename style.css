@@ -829,4 +829,20 @@ footer p {
     .card-content h3 {
         font-size: 1rem !important;
     }
+
+    @media (min-width: 501px) {
+    #carousel-wrapper {
+        /* Adds space on the sides so the arrows have a place to sit */
+        padding: 15px 60px !important; 
+        overflow: visible !important;
+    }
+
+    #prevBtn { 
+        left: 5px !important; 
+    }
+
+    #nextBtn { 
+        right: 5px !important; 
+    }
+}
 }
