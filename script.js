@@ -405,30 +405,40 @@ function renderCarousel(category) {
     
     if (!resultsDiv) return;
 
-    const offset = state.carouselOffset[category] || 0;
-    const max = state.dataCache.length;
-    
-    const selection = state.dataCache.slice(offset, offset + 2);
-
+    // 1. Render ALL items into the DOM immediately so they exist side-by-side for mobile swiping
     resultsDiv.innerHTML = "";
-    
-    selection.forEach(item => {
+    state.dataCache.forEach(item => {
         const card = renderCard(item, category);
         resultsDiv.appendChild(card);
     });
 
-    // --- INDICATOR LOGIC ---
-    // Hide Left Arrow if we are at the very beginning
-    if (offset <= 0) {
-        prevBtn?.classList.add('hidden');
-    } else {
-        prevBtn?.classList.remove('hidden');
-    }
+    // 2. Desktop Sliding Mechanism
+    if (window.innerWidth > 500) {
+        const offset = state.carouselOffset[category] || 0;
+        const max = state.dataCache.length;
 
-    // Hide Right Arrow if there are no more items to show
-    if (offset >= max - 2) {
-        nextBtn?.classList.add('hidden');
+        // Slide the row horizontally using CSS transforms
+        const moveX = offset * -50; // Shifts by 50% per card step
+        resultsDiv.style.transform = `translateX(${moveX}%)`;
+
+        // Manage arrow visibility on desktop
+        if (offset <= 0) {
+            prevBtn?.classList.add('hidden');
+        } else {
+            prevBtn?.classList.remove('hidden');
+        }
+
+        if (offset >= max - 2) {
+            nextBtn?.classList.add('hidden');
+        } else {
+            nextBtn?.classList.remove('hidden');
+        }
     } else {
+        // On mobile, native CSS scrolling handles positioning, so clear any desktop translation styles
+        resultsDiv.style.transform = "none";
+        
+        // Always ensure arrows are visible on mobile since you requested them
+        prevBtn?.classList.remove('hidden');
         nextBtn?.classList.remove('hidden');
     }
 }
@@ -473,6 +483,9 @@ window.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
 
         resultsDiv.addEventListener("touchend", (e) => {
+            // CHANGE: Bypass JS calculation on mobile screens to let native CSS scroll-snapping take over perfectly
+            if (window.innerWidth <= 500) return;
+
             if (isSwiping) return;
             const dx = e.changedTouches[0].clientX - touchStartX;
             const threshold = 70;
@@ -512,14 +525,30 @@ window.addEventListener('DOMContentLoaded', () => {
 // Keep moveCarousel at the very bottom, outside the DOMContentLoaded block
 function moveCarousel(category, direction) {
     if (!category || !state.dataCache || state.dataCache.length === 0) return;
+    
+    const resultsDiv = document.getElementById("results");
     const max = state.dataCache.length;
-    let currentOffset = state.carouselOffset[category] || 0;
-    let newOffset = currentOffset + direction;
-    const maxPossibleOffset = Math.max(0, max - 2);
-    if (newOffset < 0) newOffset = 0;
-    if (newOffset > maxPossibleOffset) newOffset = maxPossibleOffset;
-    if (newOffset !== currentOffset) {
-        state.carouselOffset[category] = newOffset;
-        renderCarousel(category);
+    
+    if (window.innerWidth <= 500) {
+        // Mobile behavior: Use smooth programmatic scrolling to match the native swiper track
+        const cardWidth = resultsDiv.querySelector('.card')?.offsetWidth || 0;
+        const gap = 12; // Matches layout gap in CSS
+        resultsDiv.scrollBy({
+            left: direction * (cardWidth + gap),
+            behavior: 'smooth'
+        });
+    } else {
+        // Desktop behavior: Adjust translation state offsets
+        let currentOffset = state.carouselOffset[category] || 0;
+        let newOffset = currentOffset + direction;
+        const maxPossibleOffset = Math.max(0, max - 2);
+        
+        if (newOffset < 0) newOffset = 0;
+        if (newOffset > maxPossibleOffset) newOffset = maxPossibleOffset;
+        
+        if (newOffset !== currentOffset) {
+            state.carouselOffset[category] = newOffset;
+            renderCarousel(category);
+        }
     }
 }
