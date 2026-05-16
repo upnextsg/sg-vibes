@@ -714,19 +714,29 @@ footer p {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden; /* Cuts off extra cards on desktop horizontally */
+    padding: 15px 0;
 }
 
+/* Base styles default to Desktop view rules */
 .results-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-    gap: 25px; 
+    display: flex !important; /* Overrides the grid rule above to prevent up-and-down stacking */
+    flex-direction: row !important;
+    gap: 25px !important; 
     width: 100%;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (min-width: 501px) {
+    .card {
+        flex: 0 0 calc(50% - 12.5px) !important; /* Locks desktop strictly to 2 items wide */
+    }
 }
 
 .nav-arrow {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%); /* Perfectly centers arrows vertically */
+    transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -741,10 +751,9 @@ footer p {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    z-index: 100; /* Keeps arrows floating on top of cards */
+    z-index: 100;
 }
 
-/* Desktop Arrow placement (outside the container) */
 #prevBtn { left: -50px; }
 #nextBtn { right: -50px; }
 
@@ -753,7 +762,6 @@ footer p {
     background: var(--accent); 
 }
 
-/* Card entry animation */
 .card {
     animation: cardSlideIn 0.4s ease-out forwards;
 }
@@ -763,15 +771,13 @@ footer p {
     to { opacity: 1; transform: translateX(0); }
 }
 
-/* Tablet Adjustments */
-@media (max-width: 900px) {
+@media (max-width: 900px) and (min-width: 501px) {
     #prevBtn { left: -10px; }
     #nextBtn { right: -10px; }
 }
 
-/* --- Premium Mobile Carousel Layout (Max-width: 500px) --- */
+/* --- UNCHANGED Mobile Layout Block --- */
 @media (max-width: 500px) {
-    /* 1. Bring arrows inside the screen boundaries so they don't clip off-edge */
     #prevBtn { 
         left: 8px; 
     }
@@ -780,41 +786,36 @@ footer p {
     }
 
     .nav-arrow {
-        background: rgba(10, 15, 30, 0.7); /* Darker background so they stand out clearly over images */
+        background: rgba(10, 15, 30, 0.7);
         border: 1px solid rgba(255, 255, 255, 0.2);
         width: 36px;
         height: 36px;
         font-size: 1rem;
     }
 
-    /* 2. Turn grid into a fluid horizontal slider row */
     .results-grid {
         display: flex !important;
         grid-template-columns: none !important;
         gap: 12px !important;
-        /* Left/Right 45px padding creates a 'gutter' for arrows so cards don't block them */
         padding: 10px 45px !important; 
         overflow-x: auto !important;
         scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important; /* Smooth iOS swipe momentum */
+        -webkit-overflow-scrolling: touch !important; 
     }
 
-    /* Hide ugly default browser scrollbar tracks */
     .results-grid::-webkit-scrollbar {
         display: none;
     }
 
-    /* 3. Card sizing: 80% width means the next card naturally "peeks" out by 20% */
     .card {
         flex: 0 0 80% !important;
-        scroll-snap-align: center !important; /* Snaps cards perfectly to the center when swiped */
+        scroll-snap-align: center !important;
         flex-direction: column !important; 
         height: auto !important; 
         min-height: 240px;
         margin: 0 !important;
     }
 
-    /* Make sure card images scale nicely on mobile */
     .img-container {
         width: 100% !important;
         height: 120px !important;
