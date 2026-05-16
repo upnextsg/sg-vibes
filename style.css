@@ -428,14 +428,24 @@ footer p {
 /* --- Responsive Breakpoints --- */
 @media (max-width: 500px) {
     .results-grid {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* Force side-by-side */
-        gap: 6px !important;
-        padding: 5px !important;
+        display: flex !important;
+        gap: 12px !important;
+        padding: 10px 20px !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important; /* Smooth momentum scrolling on iOS */
     }
 
+    /* CHANGE: Hide the horizontal scrollbar track to keep it clean */
+    .results-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* CHANGE: Each card takes up 85% width so 15% of the next card peeks in */
     .card {
-        flex-direction: column !important; /* Stacks image on top of text inside the half-width card */
+        flex: 0 0 85% !important;
+        scroll-snap-align: center !important;
+        flex-direction: column !important; 
         height: auto !important; 
         min-height: 220px;
         margin: 0 !important;
@@ -698,39 +708,50 @@ footer p {
     display: none;
 }
 
-.nav-arrow {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-
-    width: 32px;
-    height: 32px;
-
-    border-radius: 50%;
-    cursor: pointer;
-
-    font-size: 1rem;
-
+#carousel-wrapper {
+    position: relative;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+}
 
+.nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%); /* Perfectly centers arrows vertically */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s ease;
-
     z-index: 100;
+}
 
-    flex-shrink: 0;
+/* These rules target the HTML IDs to push them out past the card borders */
+#prevBtn {
+    left: -50px;
+}
+
+#nextBtn {
+    right: -50px;
 }
 
 .nav-arrow:active {
-    transform: scale(0.9);
-    background: #ff4b2b; /* Matches common active button colors */
+    transform: translateY(-50%) scale(0.9);
+    background: var(--accent); 
 }
 
-/* Slide Animation for cards when swiping/clicking arrows */
+/* Slide Animation for cards when clicking arrows */
 .card {
     animation: cardSlideIn 0.4s ease-out forwards;
 }
@@ -746,19 +767,15 @@ footer p {
     }
 }
 
-/* Global utility to hide arrows at start/end of list */
-.hidden {
-    display: none !important;
+/* Pull arrows slightly inside the screen on smaller tablets before hitting mobile breakpoint */
+@media (max-width: 900px) {
+    #prevBtn { left: -10px; }
+    #nextBtn { right: -10px; }
 }
 
-/* Mobile Tweak: Make arrows slightly smaller on phones */
-@media (max-width: 480px) {
+/* Hide arrows completely on mobile phones since native swipe handles it */
+@media (max-width: 500px) {
     .nav-arrow {
-        width: 36px;
-        height: 36px;
-        font-size: 1.2rem;
-    }
-    #carousel-wrapper {
-        gap: 5px;
+        display: none !important;
     }
 }
