@@ -21,6 +21,7 @@ let state = {
     dataCache: [],
     pointers: { food: 0, store: 0, music: 0 },
     carouselOffset: { food: 0, store: 0, music: 0 },
+    mobileScrollX: { food: 0, store: 0, music: 0 }, // <-- ADD THIS LINE
     isLocating: false,
     locationStatus: 'idle',
     appPhase: 'BOOT',
@@ -261,9 +262,20 @@ async function handleAction(category) {
         }
 
         // Reset the "window" to the start of the sorted list
-        state.carouselOffset[category] = 0;
         renderCarousel(category);
 
+        const resultsDiv = document.getElementById("results");
+        if (resultsDiv) {
+            if (window.innerWidth <= 500) {
+                // Restore mobile position
+                resultsDiv.scrollLeft = state.mobileScrollX[category] || 0;
+            } else {
+                // Restore desktop position
+                const offset = state.carouselOffset[category] || 0;
+                resultsDiv.style.transform = `translateX(${offset * -50}%)`;
+            }
+        }
+        
         if (state.hasUserInteracted) scrollToResults();
 
     } catch (err) {
@@ -437,6 +449,15 @@ function renderCarousel(category) {
         // On mobile, native CSS scrolling handles positioning, so clear any desktop translation styles
         resultsDiv.style.transform = "none";
         
+        // --- ADD THIS SCROLL LISTENER CODE HERE ---
+        // Save the scroll position dynamically as the user swipes
+        resultsDiv.onscroll = () => {
+            if (state.currentCategory === category) {
+                state.mobileScrollX[category] = resultsDiv.scrollLeft;
+            }
+        };
+        // ------------------------------------------
+
         // Always ensure arrows are visible on mobile since you requested them
         prevBtn?.classList.remove('hidden');
         nextBtn?.classList.remove('hidden');
@@ -549,6 +570,7 @@ function moveCarousel(category, direction) {
         if (newOffset !== currentOffset) {
             state.carouselOffset[category] = newOffset;
             renderCarousel(category);
+            state.carouselOffset[category] = newOffset;
         }
     }
 }
