@@ -492,6 +492,14 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('musicBtn')?.addEventListener('click', () => handleUserClick('music'));
     document.getElementById('app-share-fab')?.addEventListener('click', shareApp);
 
+    // Securely bind carousel click parameters without inline code requirements
+    document.getElementById('prevBtn')?.addEventListener('click', () => {
+        if (state.currentCategory) moveCarousel(state.currentCategory, -1);
+    });
+    document.getElementById('nextBtn')?.addEventListener('click', () => {
+        if (state.currentCategory) moveCarousel(state.currentCategory, 1);
+    });
+
     // 2. Setup Navigation Interactions (One declaration only)
     const resultsDiv = document.getElementById("results");
     let touchStartX = 0;
