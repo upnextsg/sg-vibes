@@ -14,13 +14,8 @@
     <meta http-equiv="Content-Security-Policy"
     content="
     default-src 'self';
-    script-src 'self' 'unsafe-inline';
-    connect-src 'self'
-    https://docs.google.com
-    https://docs.googleusercontent.com
-    https://*.googleusercontent.com
-    https://*.google.com
-    https://*.gstatic.com;
+    script-src 'self';
+    connect-src 'self' https://docs.google.com https://docs.googleusercontent.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' data: https://images.unsplash.com https://upload.wikimedia.org;
@@ -30,18 +25,6 @@
     frame-ancestors 'none';
     upgrade-insecure-requests;
     block-all-mixed-content;
-    ">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Permissions-Policy"
-    content="
-    geolocation=(self),
-    camera=(),
-    microphone=(),
-    payment=(),
-    usb=(),
-    accelerometer=(),
-    gyroscope=()
     ">
     </head>
 <body>
@@ -89,15 +72,15 @@
 
        <div id="carousel-wrapper">
         <!-- Left Arrow Button -->
-        <button id="prevBtn" class="nav-arrow hidden" onclick="moveCarousel(state.currentCategory, -1)" aria-label="Previous suggestions">❮</button>
+        <button id="prevBtn" class="nav-arrow hidden" aria-label="Previous suggestions">❮</button>
         
         <!-- This is your original results main tag, now wrapped for the carousel -->
         <main id="results" class="results-grid">
         </main>
     
         <!-- Right Arrow Button -->
-        <button id="nextBtn" class="nav-arrow hidden" onclick="moveCarousel(state.currentCategory, 1)" aria-label="Next suggestions">❯</button>
-        </div>
+        <button id="nextBtn" class="nav-arrow hidden" aria-label="Next suggestions">❯</button>
+       </div>
 
         <footer>
             <p>© 2026 SG Vibes • Discovering the Red Dot</p>
